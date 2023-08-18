@@ -1,7 +1,9 @@
 <script setup>
-import HelloWorld from './components/HelloWorld.vue';
+import Playboard from './components/Playboard.vue';
 </script>
 
 <template>
-    <HelloWorld />
+    <div class="flex justify-center items-center min-h-screen bg-[#f2f1e7]">
+        <Playboard />
+    </div>
 </template>
