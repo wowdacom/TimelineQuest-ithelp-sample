@@ -2,12 +2,14 @@
 import { ref } from 'vue';
 
 const isGameStart = ref(true);
+const isShowTip = ref(false);
+const isShowInstructions = ref(false);
 </script>
 
 <template>
     <div class="w-[375px] h-[667px] border border-light-400">
         <div class="w-full h-full flex justify-center items-center">
-            <div class="w-full h-full" v-if="isGameStart">
+            <div class="w-full h-full relative" v-if="isGameStart">
                 <div class="mx-1 h-8 flex justify-center items-center relative">
                     <div class="mr-2 text-sm font-Libre">1 of 8</div>
                     <ul class="flex items-center">
@@ -18,8 +20,12 @@ const isGameStart = ref(true);
                         <i-healthicons-question-mark class="text-sm" />
                     </div>
                 </div>
-                <div class="relative h-[145px]">
-                    <div v-for="clue in 8" class="absolute top-0 left-1/2 -translate-x-1/2 flex items-center w-[360px] px-2 py-3 border rounded-lg mx-auto bg-white shadow-bottom">
+                <div class="absolute h-[145px] left-1/2 top-8">
+                    <div
+                        v-for="clue in 8"
+                        class="absolute top-0 left-1/2 -translate-x-1/2 flex items-center w-[360px] px-2 py-3 border rounded-lg mx-auto bg-white shadow-bottom"
+                        :class="isShowTip ? 'animate-[wiggleCard_5s_infinite_forwards]' : ''"
+                    >
                         <img
                             class="w-[100px] h-[100px] mr-2"
                             src="https://static01.nytimes.com/newsgraphics/2023-01-05-headlines/dbee7ea268717ea6be65b1bd8bbbb1a46bdf16b8/_assets/images/clues/2023-08-13/buddha.jpg"
@@ -28,10 +34,29 @@ const isGameStart = ref(true);
                         <p class="text-sm font-bold">Prince Siddhartha Gautama is born. He is said to renounce his way of life to wander, becoming the Buddha. {{ clue }}</p>
                         <div class="absolute right-2 bottom-2 font-Libre text-[#b1aea4] text-sm">2 Points</div>
                     </div>
-                    <div class="absolute text-base text-white px-2 top-0 left-1/2 -translate-y-1/2 -translate-x-1/2 font-Libre rounded-full bg-[#b6b3a4]">Circa 400s B.C.</div>
-                    <div class="absolute bottom-10 right-24 translate-x-1/2 translate-y-10">
-                        <i-pepicons-pencil-hand-point class="animate-[wiggle_5s_infinite_forwards] -rotate-45 text-4xl" />
+                    <div class="absolute w-36 text-base text-white text-center px-2 top-0 left-1/2 -translate-y-1/2 -translate-x-1/2 font-Libre rounded-full bg-[#b6b3a4]">Circa 400s B.C.</div>
+                    <div class="absolute bottom-10 right-24 translate-x-1/2 translate-y-10" v-if="isShowTip">
+                        <i-carbon-touch-1-filled class="animate-[wiggle_5s_infinite_forwards] text-4xl text-yellow-400" />
                         <div class="absolute w-60 -bottom-10 -left-20 -rotate-3 font-bold">將線索拖曳到時間軌跡上！</div>
+                    </div>
+                </div>
+                <div ref="timelineContainer" class="h-[407px] mt-40 px-4">
+                    <div class="h-full relative">
+                        <div class="absolute top-0 left-1/2 -translate-x-1/2 text-[#b1aea4]">BEFORE</div>
+                        <div class="absolute w-0.5 h-5/6 bg-white top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
+                        <div class="absolute bottom-0 left-1/2 -translate-x-1/2 text-[#b1aea4]">AFTER</div>
+                    </div>
+                    <div ref="timeline" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                        <div ref="outline" class="w-[120px] h-[360px]"></div>
+                        <div ref="clues" class="relative w-[350px] bg-[#e3e0d5] rounded-lg py-[12px] px-[10px] flex">
+                            <div class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">1868</div>
+                            <img
+                                class="w-[65px] h-[65px]"
+                                src="https://static01.nytimes.com/newsgraphics/2023-01-05-headlines/8bd71983e8deb451f38110d5be463bf79301293d/_assets/images/clues/2023-08-13/johnson.jpg"
+                                alt=""
+                            />
+                            <p class="px-2">Andrew Johnson is the first U.S. president to be impeached, amid a fight over Reconstruction.</p>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -47,7 +72,7 @@ const isGameStart = ref(true);
             </div>
         </div>
 
-        <div class="mx-auto w-11/12 px-4 py-12 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg hidden">
+        <div v-if="isShowInstructions" class="mx-auto w-11/12 px-4 py-12 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg">
             <i-iconoir-cancel class="absolute right-2 top-2 text-xl" />
             <h1 class="text-2xl font-bold mb-6 text-center">怎麼玩時間線任務</h1>
             <div class="">

@@ -10,6 +10,9 @@ dependencies:
     version: 3.3.4
 
 devDependencies:
+  '@iconify-json/carbon':
+    specifier: ^1.1.20
+    version: 1.1.20
   '@iconify-json/clarity':
     specifier: ^1.1.9
     version: 1.1.9
@@ -376,6 +379,12 @@ packages:
 
   /@humanwhocodes/object-schema@1.2.1:
     resolution: {integrity: sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==}
+    dev: true
+
+  /@iconify-json/carbon@1.1.20:
+    resolution: {integrity: sha512-ed/3FDCjicQARWaSGIDZpaF+rWmxoSqrmHYZV2aEicufp0yciG44y9OEmArxxr/0U6bEC3zJbKMSOSw4CKeBJg==}
+    dependencies:
+      '@iconify/types': 2.0.0
     dev: true
 
   /@iconify-json/clarity@1.1.9:
