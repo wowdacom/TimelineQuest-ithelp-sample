@@ -4,6 +4,7 @@ import { ref } from 'vue';
 const isGameStart = ref(true);
 const isShowTip = ref(false);
 const isShowInstructions = ref(false);
+const isShowHint = ref(false);
 </script>
 
 <template>
@@ -40,22 +41,22 @@ const isShowInstructions = ref(false);
                         <div class="absolute w-60 -bottom-10 -left-20 -rotate-3 font-bold">將線索拖曳到時間軌跡上！</div>
                     </div>
                 </div>
-                <div ref="timelineContainer" class="h-[407px] mt-40 px-4">
-                    <div class="h-full relative">
-                        <div class="absolute top-0 left-1/2 -translate-x-1/2 text-[#b1aea4]">BEFORE</div>
-                        <div class="absolute w-0.5 h-5/6 bg-white top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
-                        <div class="absolute bottom-0 left-1/2 -translate-x-1/2 text-[#b1aea4]">AFTER</div>
+                <div ref="timelineContainer" class="h-[407px] px-4">
+                    <div class="h-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pt-48 flex flex-col items-center">
+                        <div class="text-[#b1aea4]">BEFORE</div>
+                        <div class="w-0.5 h-5/6 bg-white"></div>
+                        <div class="text-[#b1aea4]">AFTER</div>
                     </div>
-                    <div ref="timeline" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                        <div ref="outline" class="w-[120px] h-[360px]"></div>
-                        <div ref="clues" class="relative w-[350px] bg-[#e3e0d5] rounded-lg py-[12px] px-[10px] flex">
-                            <div class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2">1868</div>
+                    <div ref="timeline" class="absolute top-[250px] left-1/2 -translate-x-1/2 -translate-y-1/2">
+                        <div ref="outline" v-if="isShowHint" class="w-[360px] h-[120px] bg-[#f9d988] rounded-lg absolute top-[40px] left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
+                        <div ref="clues" class="mx-auto absolute top-[165px] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] bg-[#e3e0d5] rounded-lg py-[12px] px-[10px] flex items-center">
+                            <div class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 bg-[#b6b3a4] rounded-full text-base px-2 py-0.5 text-white font-Libre">1868</div>
                             <img
                                 class="w-[65px] h-[65px]"
                                 src="https://static01.nytimes.com/newsgraphics/2023-01-05-headlines/8bd71983e8deb451f38110d5be463bf79301293d/_assets/images/clues/2023-08-13/johnson.jpg"
                                 alt=""
                             />
-                            <p class="px-2">Andrew Johnson is the first U.S. president to be impeached, amid a fight over Reconstruction.</p>
+                            <p class="px-2 text-sm text-[#B0AEA5]">Andrew Johnson is the first U.S. president to be impeached, amid a fight over Reconstruction.</p>
                         </div>
                     </div>
                 </div>
