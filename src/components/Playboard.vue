@@ -1,10 +1,28 @@
 <script setup>
-import { ref } from 'vue';
+import { ref, reactive } from 'vue';
+import cluesData from '../assets/clues.json';
 
 const isGameStart = ref(true);
 const isShowTip = ref(false);
 const isShowInstructions = ref(false);
 const isShowHint = ref(false);
+
+const historyEvents = ref([]);
+const clues = ref([]);
+
+const gameStatus = reactive({
+    currentStep: 1,
+    totalStep: 8,
+    stepCorrect: [null, null, null, null, null, null, null, null],
+    score: 0,
+    scoreRecord: [0, 0, 0, 0, 0, 0, 0, 0],
+});
+
+const gameInit = () => {
+    historyEvents.value.push({ ...cluesData[0] });
+    clues.value = [...cluesData.slice(1)];
+};
+gameInit();
 </script>
 
 <template>
@@ -12,51 +30,61 @@ const isShowHint = ref(false);
         <div class="w-full h-full flex justify-center items-center">
             <div class="w-full h-full relative" v-if="isGameStart">
                 <div class="mx-1 h-8 flex justify-center items-center relative">
-                    <div class="mr-2 text-sm font-Libre">1 of 8</div>
+                    <div class="mr-2 text-sm font-Libre">{{ gameStatus.currentStep }} of {{ gameStatus.totalStep }}</div>
                     <ul class="flex items-center">
-                        <li class="w-6 h-2.5 mr-[2px] border-2 border-[#e3e0d5] rounded-full shrink-0 bg-[#e3e0d5]" v-for="item in 8"></li>
+                        <li
+                            class="w-6 h-2.5 mr-[2px] border-2 rounded-full"
+                            :class="[
+                                isCorrect === null ? 'bg-[#e3e0d5] border-[#e3e0d5]' : isCorrect ? 'bg-[#5cb887] border-[#5cb887]' : 'bg-[#d25353] border-[#d25353]',
+                                gameStatus.currentStep === index + 1 ? 'border-[#5d72c9]' : '',
+                            ]"
+                            v-for="(isCorrect, index) in gameStatus.stepCorrect"
+                        ></li>
                     </ul>
-                    <div class="ml-2 text-sm font-Libre">0 Points</div>
+                    <div class="ml-2 text-sm font-Libre">{{ gameStatus.score }} Points</div>
                     <div class="ml-2 w-5 h-5 mt-0.5 flex justify-center items-center border-2 border-[#b1aea4] text-[#b1aea4] rounded-full">
                         <i-healthicons-question-mark class="text-sm" />
                     </div>
                 </div>
                 <div class="absolute h-[145px] left-1/2 top-8">
                     <div
-                        v-for="clue in 8"
+                        v-for="clue in clues"
+                        :key="clue"
                         class="absolute top-0 left-1/2 -translate-x-1/2 flex items-center w-[360px] px-2 py-3 border rounded-lg mx-auto bg-white shadow-bottom"
                         :class="isShowTip ? 'animate-[wiggleCard_5s_infinite_forwards]' : ''"
                     >
-                        <img
-                            class="w-[100px] h-[100px] mr-2"
-                            src="https://static01.nytimes.com/newsgraphics/2023-01-05-headlines/dbee7ea268717ea6be65b1bd8bbbb1a46bdf16b8/_assets/images/clues/2023-08-13/buddha.jpg"
-                            alt=""
-                        />
-                        <p class="text-sm font-bold">Prince Siddhartha Gautama is born. He is said to renounce his way of life to wander, becoming the Buddha. {{ clue }}</p>
-                        <div class="absolute right-2 bottom-2 font-Libre text-[#b1aea4] text-sm">2 Points</div>
+                        <img class="w-[100px] h-[100px] mr-2 shrink-0" :src="clue.image" alt="" />
+                        <p class="text-sm font-bold">{{ clue.description }}</p>
+                        <div class="absolute right-2 bottom-2 font-Libre text-[#b1aea4] text-sm">{{ clue.point }} Points</div>
                     </div>
-                    <div class="absolute w-36 text-base text-white text-center px-2 top-0 left-1/2 -translate-y-1/2 -translate-x-1/2 font-Libre rounded-full bg-[#b6b3a4]">Circa 400s B.C.</div>
                     <div class="absolute bottom-10 right-24 translate-x-1/2 translate-y-10" v-if="isShowTip">
                         <i-carbon-touch-1-filled class="animate-[wiggle_5s_infinite_forwards] text-4xl text-yellow-400" />
                         <div class="absolute w-60 -bottom-10 -left-20 -rotate-3 font-bold">將線索拖曳到時間軌跡上！</div>
                     </div>
                 </div>
-                <div ref="timelineContainer" class="h-[407px] px-4">
+                <div ref="timelineContainerEl" class="h-[407px] px-4">
                     <div class="h-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pt-48 flex flex-col items-center">
                         <div class="text-[#b1aea4]">BEFORE</div>
                         <div class="w-0.5 h-5/6 bg-white"></div>
                         <div class="text-[#b1aea4]">AFTER</div>
                     </div>
-                    <div ref="timeline" class="absolute top-[250px] left-1/2 -translate-x-1/2 -translate-y-1/2">
-                        <div ref="outline" v-if="isShowHint" class="w-[360px] h-[120px] bg-[#f9d988] rounded-lg absolute top-[40px] left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
-                        <div ref="clues" class="mx-auto absolute top-[165px] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] bg-[#e3e0d5] rounded-lg py-[12px] px-[10px] flex items-center">
-                            <div class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 bg-[#b6b3a4] rounded-full text-base px-2 py-0.5 text-white font-Libre">1868</div>
-                            <img
-                                class="w-[65px] h-[65px]"
-                                src="https://static01.nytimes.com/newsgraphics/2023-01-05-headlines/8bd71983e8deb451f38110d5be463bf79301293d/_assets/images/clues/2023-08-13/johnson.jpg"
-                                alt=""
-                            />
-                            <p class="px-2 text-sm text-[#B0AEA5]">Andrew Johnson is the first U.S. president to be impeached, amid a fight over Reconstruction.</p>
+                    <div ref="timelineEl" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+                        <div ref="outlineEl" v-if="isShowHint" class="w-[360px] h-[120px] bg-[#f9d988] rounded-lg absolute top-[40px] left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
+                        <div
+                            ref="cluesEl"
+                            v-for="historyEvent in historyEvents"
+                            :key="historyEvent.year"
+                            class="mx-auto absolute top-[50px] left-1/2 w-[350px] bg-[#e3e0d5] rounded-lg py-[12px] px-[10px] flex items-center border-t-4 border-t-[#f2f1e7]"
+                            :style="{ transform: `translate(-50%, ${historyEvent.translateY})` }"
+                        >
+                            <div class="absolute left-1/2 top-0 -translate-x-1/2 translate-y-[-18px] bg-[#f2f1e7] rounded-t-full text-base px-3.5 z-3 text-[#f2f1e7] h-4">
+                                {{ historyEvent.year }}
+                            </div>
+                            <div class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 bg-[#b6b3a4] rounded-full text-base px-2 py-0.5 text-white font-Libre">
+                                {{ historyEvent.year }}
+                            </div>
+                            <img class="w-[65px] h-[65px] shrink-0" :src="historyEvent.image" alt="" />
+                            <p class="px-2 text-sm text-[#5b5338] font-extrabold">{{ historyEvent.description }}</p>
                         </div>
                     </div>
                 </div>
