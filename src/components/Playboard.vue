@@ -1,5 +1,6 @@
 <script setup>
 import { ref, reactive } from 'vue';
+import { isMobile } from '../utils/device-detect';
 import cluesData from '../assets/clues.json';
 
 const isGameStart = ref(true);
@@ -17,6 +18,21 @@ const gameStatus = reactive({
     score: 0,
     scoreRecord: [0, 0, 0, 0, 0, 0, 0, 0],
 });
+
+const clueCardEl = ref([]);
+
+const handleClueCardClick = (cardIndex) => {
+    if (isMobile()) {
+        return;
+    }
+    console.log('click');
+    isShowHint.value = true;
+};
+
+const handleClueCardTouch = (cardIndex) => {
+    console.log('touch');
+    isShowHint.value = true;
+};
 
 const gameInit = () => {
     historyEvents.value.push({ ...cluesData[0] });
@@ -46,12 +62,19 @@ gameInit();
                         <i-healthicons-question-mark class="text-sm" />
                     </div>
                 </div>
-                <div class="absolute h-[145px] left-1/2 top-8">
+                <div class="absolute h-[145px] left-1/2 top-8 z-10">
                     <div
-                        v-for="clue in clues"
+                        ref="clueCardEl"
+                        v-for="(clue, index) in clues"
                         :key="clue"
                         class="absolute top-0 left-1/2 -translate-x-1/2 flex items-center w-[360px] px-2 py-3 border rounded-lg mx-auto bg-white shadow-bottom"
                         :class="isShowTip ? 'animate-[wiggleCard_5s_infinite_forwards]' : ''"
+                        @mousedown.stop="handleClueCardClick(index)"
+                        @mouseup.stop="() => (isShowHint = false)"
+                        @touchstart.stop="handleClueCardTouch(index)"
+                        @touchend.stop="isShowHint = false"
+                        @dragstart="() => false"
+                        v-show="index === gameStatus.currentStep - 1"
                     >
                         <img class="w-[100px] h-[100px] mr-2 shrink-0" :src="clue.image" alt="" />
                         <p class="text-sm font-bold">{{ clue.description }}</p>
