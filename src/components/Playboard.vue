@@ -8,7 +8,7 @@ const isShowTip = ref(false);
 const isShowInstructions = ref(false);
 const isShowHint = ref(false);
 
-const historyEvents = ref([]);
+const timelineEvents = ref([]);
 const clues = ref([]);
 
 const gameStatus = reactive({
@@ -19,23 +19,86 @@ const gameStatus = reactive({
     scoreRecord: [0, 0, 0, 0, 0, 0, 0, 0],
 });
 
+const clueCardContainerEl = ref(null);
 const clueCardEl = ref([]);
+const currentClueCardEl = ref(null);
+const timelineEl = ref(null);
+const timelineEventsEl = ref([]);
+
+const answeringStyleRaw = {
+    timelineContainer: {
+        paddingTop: '180px',
+    },
+    timeline: {},
+    hint: {
+        top: '110px',
+    },
+};
+const answeringStyle = reactive(JSON.parse(JSON.stringify(answeringStyleRaw)));
 
 const handleClueCardClick = (cardIndex) => {
     if (isMobile()) {
         return;
     }
     console.log('click');
-    isShowHint.value = true;
+    currentClueCardEl.value = clueCardEl.value[cardIndex];
+    document.body.append(currentClueCardEl.value);
 };
 
-const handleClueCardTouch = (cardIndex) => {
+const handleClueCardTouch = (cardIndex, ev) => {
     console.log('touch');
-    isShowHint.value = true;
+    currentClueCardEl.value = clueCardEl.value[cardIndex];
+    document.body.append(currentClueCardEl.value);
+    setCurrentClueCardMove(ev.touches[0].pageX, ev.touches[0].pageY - currentClueCardEl.value.offsetHeight / 2);
+    document.addEventListener('touchmove', handleClueCardMove);
+};
+
+const handleClueCardClickOff = (cardIndex) => {
+    if (isMobile()) {
+        return;
+    }
+    clueCardContainerEl.value.append(currentClueCardEl.value);
+    isShowHint.value = false;
+};
+
+const handleClueCardTouchOff = (cardIndex) => {
+    clueCardContainerEl.value.append(currentClueCardEl.value);
+    setCurrentClueCardMove(0, 0);
+    Object.assign(answeringStyle, JSON.parse(JSON.stringify(answeringStyleRaw)));
+    isShowHint.value = false;
+};
+
+const handleClueCardMove = (ev) => {
+    setCurrentClueCardMove(ev.touches[0].pageX, ev.touches[0].pageY - currentClueCardEl.value.offsetHeight / 2);
+    handleAnswering();
+};
+
+const setCurrentClueCardMove = (left, top) => {
+    currentClueCardEl.value.style.left = left + 'px';
+    currentClueCardEl.value.style.top = top + 'px';
+};
+
+const handleAnswering = () => {
+    const currentCardState = currentClueCardEl.value.getBoundingClientRect();
+    const timelineElState = timelineEl.value.getBoundingClientRect();
+    const timelineEventsElState = timelineEventsEl.value.map((el) => el.getBoundingClientRect());
+    if (currentCardState.bottom > timelineElState.top) {
+        isShowHint.value = true;
+        answeringStyle.timelineContainer.paddingTop = '40px';
+    } else {
+        isShowHint.value = false;
+        answeringStyle.timelineContainer.paddingTop = '180px';
+    }
+
+    if (currentCardState.bottom > timelineEventsElState[0].bottom) {
+        answeringStyle.hint.top = '355px';
+    } else {
+        answeringStyle.hint.top = '110px';
+    }
 };
 
 const gameInit = () => {
-    historyEvents.value.push({ ...cluesData[0] });
+    timelineEvents.value.push({ ...cluesData[0] });
     clues.value = [...cluesData.slice(1)];
 };
 gameInit();
@@ -62,17 +125,17 @@ gameInit();
                         <i-healthicons-question-mark class="text-sm" />
                     </div>
                 </div>
-                <div class="absolute h-[145px] left-1/2 top-8 z-10">
+                <div ref="clueCardContainerEl" class="absolute h-[145px] left-1/2 top-8 z-10">
                     <div
                         ref="clueCardEl"
                         v-for="(clue, index) in clues"
                         :key="clue"
                         class="absolute top-0 left-1/2 -translate-x-1/2 flex items-center w-[360px] px-2 py-3 border rounded-lg mx-auto bg-white shadow-bottom"
                         :class="isShowTip ? 'animate-[wiggleCard_5s_infinite_forwards]' : ''"
-                        @mousedown.stop="handleClueCardClick(index)"
-                        @mouseup.stop="() => (isShowHint = false)"
-                        @touchstart.stop="handleClueCardTouch(index)"
-                        @touchend.stop="isShowHint = false"
+                        @mousedown.stop="handleClueCardClick(event, index)"
+                        @mouseup.stop="handleClueCardClickOff(index)"
+                        @touchstart.stop="handleClueCardTouch(index, $event)"
+                        @touchend.stop="handleClueCardTouchOff(index)"
                         @dragstart="() => false"
                         v-show="index === gameStatus.currentStep - 1"
                     >
@@ -85,29 +148,34 @@ gameInit();
                         <div class="absolute w-60 -bottom-10 -left-20 -rotate-3 font-bold">將線索拖曳到時間軌跡上！</div>
                     </div>
                 </div>
-                <div ref="timelineContainerEl" class="h-[407px] px-4">
-                    <div class="h-full absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pt-48 flex flex-col items-center">
-                        <div class="text-[#b1aea4]">BEFORE</div>
-                        <div class="w-0.5 h-5/6 bg-white"></div>
-                        <div class="text-[#b1aea4]">AFTER</div>
+                <div ref="timelineContainerEl" class="absolute bottom-0 left-1/2 -translate-x-1/2 h-full w-full px-4">
+                    <div :style="answeringStyle.timelineContainer" class="transition-all duration-700 relative h-full flex flex-col items-center">
+                        <div ref="anchorBeforeEl" class="text-[#b1aea4]">BEFORE</div>
+                        <div class="w-0.5 h-full bg-white"></div>
+                        <div class="text-[#b1aea4] mb-4">AFTER</div>
                     </div>
-                    <div ref="timelineEl" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-                        <div ref="outlineEl" v-if="isShowHint" class="w-[360px] h-[120px] bg-[#f9d988] rounded-lg absolute top-[40px] left-1/2 -translate-x-1/2 -translate-y-1/2"></div>
+                    <div ref="timelineEl" class="absolute w-full h-[480px] bottom-0 left-1/2 -translate-x-1/2">
                         <div
-                            ref="cluesEl"
-                            v-for="historyEvent in historyEvents"
-                            :key="historyEvent.year"
-                            class="mx-auto absolute top-[50px] left-1/2 w-[350px] bg-[#e3e0d5] rounded-lg py-[12px] px-[10px] flex items-center border-t-4 border-t-[#f2f1e7]"
-                            :style="{ transform: `translate(-50%, ${historyEvent.translateY})` }"
+                            ref="outlineEl"
+                            :style="answeringStyle.hint"
+                            v-if="isShowHint"
+                            class="w-[360px] h-[120px] bg-[#f9d988] rounded-lg absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
+                        ></div>
+                        <div
+                            ref="timelineEventsEl"
+                            v-for="timelineEvent in timelineEvents"
+                            :key="timelineEvent.year"
+                            class="mx-auto absolute top-[140px] left-1/2 w-[350px] bg-[#e3e0d5] rounded-lg py-[12px] px-[10px] flex items-center border-t-4 border-t-[#f2f1e7]"
+                            :style="{ transform: `translate(-50%, ${timelineEvent.translateY})` }"
                         >
                             <div class="absolute left-1/2 top-0 -translate-x-1/2 translate-y-[-18px] bg-[#f2f1e7] rounded-t-full text-base px-3.5 z-3 text-[#f2f1e7] h-4">
-                                {{ historyEvent.year }}
+                                {{ timelineEvent.year }}
                             </div>
                             <div class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 bg-[#b6b3a4] rounded-full text-base px-2 py-0.5 text-white font-Libre">
-                                {{ historyEvent.year }}
+                                {{ timelineEvent.year }}
                             </div>
-                            <img class="w-[65px] h-[65px] shrink-0" :src="historyEvent.image" alt="" />
-                            <p class="px-2 text-sm text-[#5b5338] font-extrabold">{{ historyEvent.description }}</p>
+                            <img class="w-[65px] h-[65px] shrink-0" :src="timelineEvent.image" alt="" />
+                            <p class="px-2 text-sm text-[#5b5338] font-extrabold">{{ timelineEvent.description }}</p>
                         </div>
                     </div>
                 </div>
