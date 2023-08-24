@@ -22,18 +22,23 @@ const gameStatus = reactive({
 const clueCardContainerEl = ref(null);
 const clueCardEl = ref([]);
 const currentClueCardEl = ref(null);
+const hintEl = ref(null);
 const timelineEl = ref(null);
 const timelineEventsEl = ref([]);
 
-const answeringStyleRaw = {
+const answeringStyleRaw = reactive({
     timelineContainer: {
         paddingTop: '180px',
     },
-    timeline: {},
+    timelineEvents: [
+        {
+            transform: 'translate(-50%, 160px)',
+        },
+    ],
     hint: {
-        top: '110px',
+        top: '80px',
     },
-};
+});
 const answeringStyle = reactive(JSON.parse(JSON.stringify(answeringStyleRaw)));
 
 const handleClueCardClick = (cardIndex) => {
@@ -82,6 +87,8 @@ const handleAnswering = () => {
     const currentCardState = currentClueCardEl.value.getBoundingClientRect();
     const timelineElState = timelineEl.value.getBoundingClientRect();
     const timelineEventsElState = timelineEventsEl.value.map((el) => el.getBoundingClientRect());
+    const hintHeight = hintEl.value.getBoundingClientRect().height;
+    const timelineEventHeight = timelineEventsElState[0].height;
     if (currentCardState.bottom > timelineElState.top) {
         isShowHint.value = true;
         answeringStyle.timelineContainer.paddingTop = '40px';
@@ -91,9 +98,9 @@ const handleAnswering = () => {
     }
 
     if (currentCardState.bottom > timelineEventsElState[0].bottom) {
-        answeringStyle.hint.top = '355px';
+        answeringStyle.hint.top = `${85 + timelineEventHeight + hintHeight + 28}px`;
     } else {
-        answeringStyle.hint.top = '110px';
+        answeringStyle.hint.top = '85px';
     }
 };
 
@@ -156,17 +163,17 @@ gameInit();
                     </div>
                     <div ref="timelineEl" class="absolute w-full h-[480px] bottom-0 left-1/2 -translate-x-1/2">
                         <div
-                            ref="outlineEl"
+                            ref="hintEl"
                             :style="answeringStyle.hint"
-                            v-if="isShowHint"
+                            v-show="isShowHint"
                             class="w-[360px] h-[120px] bg-[#f9d988] rounded-lg absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
                         ></div>
                         <div
                             ref="timelineEventsEl"
-                            v-for="timelineEvent in timelineEvents"
+                            v-for="(timelineEvent, index) in timelineEvents"
                             :key="timelineEvent.year"
-                            class="mx-auto absolute top-[140px] left-1/2 w-[350px] bg-[#e3e0d5] rounded-lg py-[12px] px-[10px] flex items-center border-t-4 border-t-[#f2f1e7]"
-                            :style="{ transform: `translate(-50%, ${timelineEvent.translateY})` }"
+                            class="mx-auto absolute top-0 left-1/2 w-[350px] bg-[#e3e0d5] rounded-lg py-[12px] px-[10px] flex items-center border-t-4 border-t-[#f2f1e7]"
+                            :style="answeringStyle.timelineEvents[index]"
                         >
                             <div class="absolute left-1/2 top-0 -translate-x-1/2 translate-y-[-18px] bg-[#f2f1e7] rounded-t-full text-base px-3.5 z-3 text-[#f2f1e7] h-4">
                                 {{ timelineEvent.year }}
