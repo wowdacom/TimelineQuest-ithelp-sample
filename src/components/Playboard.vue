@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive } from 'vue';
+import { ref, reactive, watch } from 'vue';
 import { isMobile } from '../utils/device-detect';
 import cluesData from '../assets/clues.json';
 
@@ -26,6 +26,44 @@ const hintEl = ref(null);
 const timelineEl = ref(null);
 const timelineEventsEl = ref([]);
 
+const currentTimelinePosition = ref([
+    {
+        x: '50%',
+        y: 40,
+    },
+    {
+        x: '50%',
+        y: 100,
+    },
+    {
+        x: '50%',
+        y: 160,
+    },
+    {
+        x: '50%',
+        y: 220,
+    },
+    {
+        x: '50%',
+        y: 280,
+    },
+    {
+        x: '50%',
+        y: 340,
+    },
+    {
+        x: '50%',
+        y: 400,
+    },
+    {
+        x: '50%',
+        y: 460,
+    },
+    {
+        x: '50%',
+        y: 520,
+    },
+]);
 const answeringStyleRaw = reactive({
     timelineContainer: {
         paddingTop: '180px',
@@ -34,11 +72,36 @@ const answeringStyleRaw = reactive({
         {
             transform: 'translate(-50%, 160px)',
         },
+        {
+            transform: 'translate(-50%, 160px)',
+        },
+        {
+            transform: 'translate(-50%, 160px)',
+        },
+        {
+            transform: 'translate(-50%, 160px)',
+        },
+        {
+            transform: 'translate(-50%, 160px)',
+        },
+        {
+            transform: 'translate(-50%, 160px)',
+        },
+        {
+            transform: 'translate(-50%, 160px)',
+        },
+        {
+            transform: 'translate(-50%, 160px)',
+        },
+        {
+            transform: 'translate(-50%, 160px)',
+        },
     ],
     hint: {
         top: '80px',
     },
 });
+
 const answeringStyle = reactive(JSON.parse(JSON.stringify(answeringStyleRaw)));
 
 const handleClueCardClick = (cardIndex) => {
@@ -55,6 +118,7 @@ const handleClueCardTouch = (cardIndex, ev) => {
     currentClueCardEl.value = clueCardEl.value[cardIndex];
     document.body.append(currentClueCardEl.value);
     setCurrentClueCardMove(ev.touches[0].pageX, ev.touches[0].pageY - currentClueCardEl.value.offsetHeight / 2);
+
     document.addEventListener('touchmove', handleClueCardMove);
 };
 
@@ -69,8 +133,11 @@ const handleClueCardClickOff = (cardIndex) => {
 const handleClueCardTouchOff = (cardIndex) => {
     clueCardContainerEl.value.append(currentClueCardEl.value);
     setCurrentClueCardMove(0, 0);
-    Object.assign(answeringStyle, JSON.parse(JSON.stringify(answeringStyleRaw)));
     isShowHint.value = false;
+    answeringStyleRaw.timelineContainer.paddingTop = '180px';
+    answeringStyleRaw.timelineEvents.forEach((element, index) => {
+        answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index].y}px)`;
+    });
 };
 
 const handleClueCardMove = (ev) => {
@@ -89,24 +156,147 @@ const handleAnswering = () => {
     const timelineEventsElState = timelineEventsEl.value.map((el) => el.getBoundingClientRect());
     const hintHeight = hintEl.value.getBoundingClientRect().height;
     const timelineEventHeight = timelineEventsElState[0].height;
+
+    //處理拖曳時的時間軸拉伸
     if (currentCardState.bottom > timelineElState.top) {
         isShowHint.value = true;
-        answeringStyle.timelineContainer.paddingTop = '40px';
+        answeringStyleRaw.timelineContainer.paddingTop = '40px';
     } else {
         isShowHint.value = false;
-        answeringStyle.timelineContainer.paddingTop = '180px';
+        answeringStyleRaw.timelineContainer.paddingTop = '180px';
     }
 
-    if (currentCardState.bottom > timelineEventsElState[0].bottom) {
-        answeringStyle.hint.top = `${85 + timelineEventHeight + hintHeight + 28}px`;
-    } else {
-        answeringStyle.hint.top = '85px';
+    if (gameStatus.currentStep === 1) {
+        if (currentCardState.bottom > timelineEventsElState[0].bottom) {
+            answeringStyle.hint.top = `${85 + timelineEventHeight + hintHeight + 28}px`;
+        } else {
+            answeringStyle.hint.top = '85px';
+        }
+    }
+
+    if (gameStatus.currentStep === 2) {
+        //計算每張 timelineEvent 的中心線，如果超過就移動 hint
+        let timelineEventCenterLines = timelineEventsElState.map((el) => window.scrollY + el.top + el.height / 2);
+        let overOutlineCount = timelineEventCenterLines.reduce((acc, cur) => {
+            if (currentCardState.bottom > cur) {
+                return acc + 1;
+            }
+            return acc;
+        }, 0);
+
+        answeringStyleRaw.timelineEvents.forEach((element, index) => {
+            if (index < overOutlineCount) {
+                answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index].y - hintHeight}px)`;
+            } else {
+                answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index].y}px)`;
+            }
+        });
+        answeringStyleRaw.hint.top = `${75 + overOutlineCount * (timelineEventHeight + 19)}px`;
+    }
+
+    if (gameStatus.currentStep > 2) {
+        //計算每張 timelineEvent 的中心線，如果超過就移動 hint
+        let timelineEventCenterLines = timelineEventsElState.map((el) => window.scrollY + el.top + el.height / 2);
+        let overOutlineCount = timelineEventCenterLines.reduce((acc, cur) => {
+            if (currentCardState.bottom > cur) {
+                return acc + 1;
+            }
+            return acc;
+        }, 0);
+
+        answeringStyleRaw.timelineEvents.forEach((element, index) => {
+            if (index < overOutlineCount) {
+                answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index].y - hintHeight}px)`;
+            } else {
+                answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index].y}px)`;
+            }
+        });
+
+        if (overOutlineCount === 0) {
+            answeringStyleRaw.hint.top = '-40px';
+        } else {
+            answeringStyleRaw.hint.top = `${-40 + overOutlineCount * ((timelineEventHeight + 28) / 2) + hintHeight / 2}px`;
+        }
     }
 };
 
+watch(
+    () => gameStatus.currentStep,
+    (currentStep) => {
+        if (currentStep === 1) {
+            answeringStyleRaw.timelineEvents[0].transform = 'translate(-50%, 160px)';
+        }
+        if (currentStep === 2) {
+            answeringStyleRaw.hint.top = '75px';
+            answeringStyleRaw.timelineEvents[0].transform = `translate(-50%, ${currentTimelinePosition.value[0].y}px)`;
+            answeringStyleRaw.timelineEvents[1].transform = `translate(-50%, ${currentTimelinePosition.value[1].y}px)`;
+        }
+        if (currentStep === 3) {
+            answeringStyleRaw.hint.top = '75px';
+            answeringStyleRaw.timelineEvents[0].transform = `translate(-50%, ${currentTimelinePosition.value[0].y}px)`;
+            answeringStyleRaw.timelineEvents[1].transform = `translate(-50%, ${currentTimelinePosition.value[1].y}px)`;
+            answeringStyleRaw.timelineEvents[2].transform = `translate(-50%, ${currentTimelinePosition.value[2].y}px)`;
+        }
+        if (currentStep === 4) {
+            answeringStyleRaw.timelineEvents[0].transform = `translate(-50%, ${currentTimelinePosition.value[0].y}px)`;
+            answeringStyleRaw.timelineEvents[1].transform = `translate(-50%, ${currentTimelinePosition.value[1].y}px)`;
+            answeringStyleRaw.timelineEvents[2].transform = `translate(-50%, ${currentTimelinePosition.value[2].y}px)`;
+            answeringStyleRaw.timelineEvents[3].transform = `translate(-50%, ${currentTimelinePosition.value[3].y}px)`;
+        }
+        if (currentStep === 5) {
+            answeringStyleRaw.timelineEvents[0].transform = `translate(-50%, ${currentTimelinePosition.value[0].y}px)`;
+            answeringStyleRaw.timelineEvents[1].transform = `translate(-50%, ${currentTimelinePosition.value[1].y}px)`;
+            answeringStyleRaw.timelineEvents[2].transform = `translate(-50%, ${currentTimelinePosition.value[2].y}px)`;
+            answeringStyleRaw.timelineEvents[3].transform = `translate(-50%, ${currentTimelinePosition.value[3].y}px)`;
+            answeringStyleRaw.timelineEvents[4].transform = `translate(-50%, ${currentTimelinePosition.value[4].y}px)`;
+        }
+        if (currentStep === 6) {
+            answeringStyleRaw.timelineEvents[0].transform = `translate(-50%, ${currentTimelinePosition.value[0].y}px)`;
+            answeringStyleRaw.timelineEvents[1].transform = `translate(-50%, ${currentTimelinePosition.value[1].y}px)`;
+            answeringStyleRaw.timelineEvents[2].transform = `translate(-50%, ${currentTimelinePosition.value[2].y}px)`;
+            answeringStyleRaw.timelineEvents[3].transform = `translate(-50%, ${currentTimelinePosition.value[3].y}px)`;
+            answeringStyleRaw.timelineEvents[4].transform = `translate(-50%, ${currentTimelinePosition.value[4].y}px)`;
+            answeringStyleRaw.timelineEvents[5].transform = `translate(-50%, ${currentTimelinePosition.value[5].y}px)`;
+        }
+        if (currentStep === 7) {
+            answeringStyleRaw.timelineEvents[0].transform = `translate(-50%, ${currentTimelinePosition.value[0].y}px)`;
+            answeringStyleRaw.timelineEvents[1].transform = `translate(-50%, ${currentTimelinePosition.value[1].y}px)`;
+            answeringStyleRaw.timelineEvents[2].transform = `translate(-50%, ${currentTimelinePosition.value[2].y}px)`;
+            answeringStyleRaw.timelineEvents[3].transform = `translate(-50%, ${currentTimelinePosition.value[3].y}px)`;
+            answeringStyleRaw.timelineEvents[4].transform = `translate(-50%, ${currentTimelinePosition.value[4].y}px)`;
+            answeringStyleRaw.timelineEvents[5].transform = `translate(-50%, ${currentTimelinePosition.value[5].y}px)`;
+            answeringStyleRaw.timelineEvents[6].transform = `translate(-50%, ${currentTimelinePosition.value[6].y}px)`;
+        }
+        if (currentStep === 8) {
+            answeringStyleRaw.timelineEvents[0].transform = `translate(-50%, ${currentTimelinePosition.value[0].y}px)`;
+            answeringStyleRaw.timelineEvents[1].transform = `translate(-50%, ${currentTimelinePosition.value[1].y}px)`;
+            answeringStyleRaw.timelineEvents[2].transform = `translate(-50%, ${currentTimelinePosition.value[2].y}px)`;
+            answeringStyleRaw.timelineEvents[3].transform = `translate(-50%, ${currentTimelinePosition.value[3].y}px)`;
+            answeringStyleRaw.timelineEvents[4].transform = `translate(-50%, ${currentTimelinePosition.value[4].y}px)`;
+            answeringStyleRaw.timelineEvents[5].transform = `translate(-50%, ${currentTimelinePosition.value[5].y}px)`;
+            answeringStyleRaw.timelineEvents[6].transform = `translate(-50%, ${currentTimelinePosition.value[6].y}px)`;
+            answeringStyleRaw.timelineEvents[7].transform = `translate(-50%, ${currentTimelinePosition.value[7].y}px)`;
+        }
+    },
+);
+
+watch(
+    () => JSON.stringify(answeringStyleRaw),
+    (newVal) => {
+        Object.assign(answeringStyle, JSON.parse(newVal));
+    },
+);
+
 const gameInit = () => {
     timelineEvents.value.push({ ...cluesData[0] });
-    clues.value = [...cluesData.slice(1)];
+    timelineEvents.value.push({ ...cluesData[1] });
+    timelineEvents.value.push({ ...cluesData[2] });
+    timelineEvents.value.push({ ...cluesData[3] });
+    timelineEvents.value.push({ ...cluesData[4] });
+    timelineEvents.value.push({ ...cluesData[5] });
+    timelineEvents.value.push({ ...cluesData[6] });
+    clues.value = [...cluesData.slice(7)];
+    gameStatus.currentStep = 7;
 };
 gameInit();
 </script>
@@ -144,7 +334,6 @@ gameInit();
                         @touchstart.stop="handleClueCardTouch(index, $event)"
                         @touchend.stop="handleClueCardTouchOff(index)"
                         @dragstart="() => false"
-                        v-show="index === gameStatus.currentStep - 1"
                     >
                         <img class="w-[100px] h-[100px] mr-2 shrink-0" :src="clue.image" alt="" />
                         <p class="text-sm font-bold">{{ clue.description }}</p>
@@ -182,7 +371,7 @@ gameInit();
                                 {{ timelineEvent.year }}
                             </div>
                             <img class="w-[65px] h-[65px] shrink-0" :src="timelineEvent.image" alt="" />
-                            <p class="px-2 text-sm text-[#5b5338] font-extrabold">{{ timelineEvent.description }}</p>
+                            <p class="px-2 text-sm text-[#5b5338] font-extrabold line-clamp-3">{{ timelineEvent.description }}</p>
                         </div>
                     </div>
                 </div>
