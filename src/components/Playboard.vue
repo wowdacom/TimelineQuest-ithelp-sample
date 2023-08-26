@@ -191,10 +191,30 @@ const handleAnswering = () => {
                 answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index].y}px)`;
             }
         });
-        answeringStyleRaw.hint.top = `${75 + overOutlineCount * (timelineEventHeight + 19)}px`;
+        answeringStyleRaw.hint.top = `${0 + overOutlineCount * (timelineEventHeight + 19)}px`;
     }
 
-    if (gameStatus.currentStep > 2) {
+    if (gameStatus.currentStep === 3) {
+        //計算每張 timelineEvent 的中心線，如果超過就移動 hint
+        let timelineEventCenterLines = timelineEventsElState.map((el) => window.scrollY + el.top + el.height / 2);
+        let overOutlineCount = timelineEventCenterLines.reduce((acc, cur) => {
+            if (currentCardState.bottom > cur) {
+                return acc + 1;
+            }
+            return acc;
+        }, 0);
+
+        answeringStyleRaw.timelineEvents.forEach((element, index) => {
+            if (index < overOutlineCount) {
+                answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index].y - hintHeight}px)`;
+            } else {
+                answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index].y}px)`;
+            }
+        });
+        answeringStyleRaw.hint.top = `${-40 + overOutlineCount * (timelineEventHeight + 27)}px`;
+    }
+
+    if (gameStatus.currentStep > 3) {
         //計算每張 timelineEvent 的中心線，如果超過就移動 hint
         let timelineEventCenterLines = timelineEventsElState.map((el) => window.scrollY + el.top + el.height / 2);
         let overOutlineCount = timelineEventCenterLines.reduce((acc, cur) => {
@@ -288,15 +308,11 @@ watch(
 );
 
 const gameInit = () => {
-    timelineEvents.value.push({ ...cluesData[0] });
-    timelineEvents.value.push({ ...cluesData[1] });
-    timelineEvents.value.push({ ...cluesData[2] });
-    timelineEvents.value.push({ ...cluesData[3] });
-    timelineEvents.value.push({ ...cluesData[4] });
-    timelineEvents.value.push({ ...cluesData[5] });
-    timelineEvents.value.push({ ...cluesData[6] });
-    clues.value = [...cluesData.slice(7)];
-    gameStatus.currentStep = 7;
+    gameStatus.currentStep = 6;
+    timelineEvents.value = cluesData.slice(0, gameStatus.currentStep);
+    clues.value = [...cluesData];
+    console.log(gameStatus.currentStep);
+    console.log(clues.value);
 };
 gameInit();
 </script>
@@ -329,7 +345,8 @@ gameInit();
                         :key="clue"
                         class="absolute top-0 left-1/2 -translate-x-1/2 flex items-center w-[360px] px-2 py-3 border rounded-lg mx-auto bg-white shadow-bottom"
                         :class="isShowTip ? 'animate-[wiggleCard_5s_infinite_forwards]' : ''"
-                        @mousedown.stop="handleClueCardClick(event, index)"
+                        v-show="clue.step === gameStatus.currentStep"
+                        @mousedown.stop="handleClueCardClick(index)"
                         @mouseup.stop="handleClueCardClickOff(index)"
                         @touchstart.stop="handleClueCardTouch(index, $event)"
                         @touchend.stop="handleClueCardTouchOff(index)"
