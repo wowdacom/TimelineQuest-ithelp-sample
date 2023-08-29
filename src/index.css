@@ -3,3 +3,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*研究一下為什麼 html, body 都要 overflow-hidden 才有用*/
+html, body {
+    position: relative;
+    overflow: hidden;
+}
