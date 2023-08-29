@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 dependencies:
   vue:
     specifier: ^3.3.4
@@ -27,6 +31,9 @@ devDependencies:
   '@iconify-json/iconoir':
     specifier: ^1.1.32
     version: 1.1.32
+  '@iconify-json/majesticons':
+    specifier: ^1.1.8
+    version: 1.1.8
   '@iconify-json/maki':
     specifier: ^1.1.20
     version: 1.1.20
@@ -415,6 +422,12 @@ packages:
 
   /@iconify-json/iconoir@1.1.32:
     resolution: {integrity: sha512-z12EzOZsqatGuCAc7CzYpxufVoexRKC910ZouB29sDT8lJiGUSVCmrhgqZSz4M7PIeqaN6YUuE6jNRgH7Wal+A==}
+    dependencies:
+      '@iconify/types': 2.0.0
+    dev: true
+
+  /@iconify-json/majesticons@1.1.8:
+    resolution: {integrity: sha512-nZ10sAfuO4ejjYq0UWfPQcgboofyqBM6DBOY3OOyM5GkZ0XDN4hFze6oCv6JdO4Mp3qc8+qnZLwxoXAk/Cde6g==}
     dependencies:
       '@iconify/types': 2.0.0
     dev: true
@@ -2177,7 +2190,3 @@ packages:
     resolution: {integrity: sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==}
     engines: {node: '>=10'}
     dev: true
-
-settings:
-  autoInstallPeers: true
-  excludeLinksFromLockfile: false
