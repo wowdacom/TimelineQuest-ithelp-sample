@@ -100,10 +100,9 @@ const answeringStyleRaw = reactive({
             transform: 'translate(-50%, 150px)',
         },
     ],
-    hint: {
-        top: '80px',
-    },
 });
+
+const hintPostionTop = ref('80px');
 
 const overOutlineCount = ref(0);
 
@@ -232,9 +231,9 @@ const handleAnswerProcess = () => {
     if (gameStatus.currentStep === 1) {
         if (currentCardState.bottom > timelineEventsElState[0].bottom) {
             overOutlineCount.value = 1;
-            answeringStyle.hint.top = `${hintDefaultTop + hintHeight + overOutlineCount.value * (timelineEventHeight + timelineEventMarginTop) + timelineEventMarginTop}px`;
+            hintPostionTop.value = `${hintDefaultTop + hintHeight + overOutlineCount.value * (timelineEventHeight + timelineEventMarginTop) + timelineEventMarginTop}px`;
         } else {
-            answeringStyle.hint.top = `${hintDefaultTop}px`;
+            hintPostionTop.value = `${hintDefaultTop}px`;
             overOutlineCount.value = 0;
         }
     }
@@ -256,7 +255,7 @@ const handleAnswerProcess = () => {
             }
         });
 
-        answeringStyleRaw.hint.top = `${hintDefaultTop + overOutlineCount.value * (timelineEventHeight + timelineEventMarginTop)}px`;
+        hintPostionTop.value = `${hintDefaultTop + overOutlineCount.value * (timelineEventHeight + timelineEventMarginTop)}px`;
     }
 
     if (gameStatus.currentStep === 3) {
@@ -278,9 +277,9 @@ const handleAnswerProcess = () => {
             }
         });
         if (overOutlineCount.value === 0) {
-            answeringStyleRaw.hint.top = `${hintDefaultTop}px`;
+            hintPostionTop.value = `${hintDefaultTop}px`;
         } else {
-            answeringStyleRaw.hint.top = `${hintDefaultTop + overOutlineCount.value * (timelineEventHeight + timelineEventMarginTop)}px`;
+            hintPostionTop.value = `${hintDefaultTop + overOutlineCount.value * (timelineEventHeight + timelineEventMarginTop)}px`;
         }
     }
 
@@ -304,9 +303,9 @@ const handleAnswerProcess = () => {
         });
 
         if (overOutlineCount.value === 0) {
-            answeringStyleRaw.hint.top = `${hintDefaultTop}px`;
+            hintPostionTop.value = `${hintDefaultTop}px`;
         } else {
-            answeringStyleRaw.hint.top = `${
+            hintPostionTop.value = `${
                 hintDefaultTop + (1 * (hintHeight + timelineEventHeight + timelineEventMarginTop)) / 2 + (overOutlineCount.value - 1) * (timelineEventHeight / 2 + timelineEventMarginTop)
             }px`;
         }
@@ -329,12 +328,12 @@ watch(
                 answeringStyleRaw.timelineEvents[0].transform = 'translate(-50%, 160px)';
                 break;
             case 2:
-                answeringStyleRaw.hint.top = '75px';
+                hintPostionTop.value = '75px';
                 updateTimelineEventsPosition(currentStep, answeringStyleRaw.timelineEvents, currentTimelinePosition.value);
                 break;
             default:
                 if (currentStep >= 3) {
-                    answeringStyleRaw.hint.top = '75px';
+                    hintPostionTop.value = '75px';
                     updateTimelineEventsPosition(currentStep, answeringStyleRaw.timelineEvents, currentTimelinePosition.value);
                 }
                 break;
@@ -345,6 +344,7 @@ watch(
 watch(
     () => JSON.stringify(answeringStyleRaw),
     (newVal) => {
+        console.log('看一下什麼時候會更新');
         Object.assign(answeringStyle, JSON.parse(newVal));
     },
 );
@@ -415,7 +415,7 @@ gameInit();
                         <p class="text-sm font-bold">{{ clue.year + ' ' + clue.description }}</p>
                         <div class="absolute right-2 bottom-2 font-Libre text-[#b1aea4] text-sm">{{ clue.point }} 分</div>
                     </div>
-                    <div class="absolute bottom-10 right-24 translate-x-1/2 translate-y-10" v-if="isShowTip">
+                    <div class="absolute bottom-10 left-10 translate-x-1/2 translate-y-10" v-if="isShowTip">
                         <i-carbon-touch-1-filled class="animate-[wiggle_5s_infinite_forwards] text-4xl text-yellow-400" />
                         <div class="absolute w-60 -bottom-10 -left-20 -rotate-3 font-bold">將線索拖曳到時間軌跡上！</div>
                     </div>
@@ -435,7 +435,7 @@ gameInit();
                     <div ref="timelineEl" class="absolute w-full h-[480px] bottom-0 left-1/2 -translate-x-1/2">
                         <div
                             ref="hintEl"
-                            :style="answeringStyle.hint"
+                            :style="{ top: hintPostionTop }"
                             v-show="isShowHint"
                             class="w-[360px] h-[120px] bg-[#f9d988] rounded-lg absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
                         ></div>
