@@ -73,31 +73,31 @@ const answeringStyleRaw = reactive({
     },
     timelineEvents: [
         {
-            transform: 'translate(-50%, 160px)',
+            transform: 'translate(-50%, 150px)',
         },
         {
-            transform: 'translate(-50%, 160px)',
+            transform: 'translate(-50%, 150px)',
         },
         {
-            transform: 'translate(-50%, 160px)',
+            transform: 'translate(-50%, 150px)',
         },
         {
-            transform: 'translate(-50%, 160px)',
+            transform: 'translate(-50%, 150px)',
         },
         {
-            transform: 'translate(-50%, 160px)',
+            transform: 'translate(-50%, 150px)',
         },
         {
-            transform: 'translate(-50%, 160px)',
+            transform: 'translate(-50%, 150px)',
         },
         {
-            transform: 'translate(-50%, 160px)',
+            transform: 'translate(-50%, 150px)',
         },
         {
-            transform: 'translate(-50%, 160px)',
+            transform: 'translate(-50%, 150px)',
         },
         {
-            transform: 'translate(-50%, 160px)',
+            transform: 'translate(-50%, 150px)',
         },
     ],
     hint: {
@@ -109,17 +109,19 @@ const overOutlineCount = ref(0);
 
 const answeringStyle = reactive(JSON.parse(JSON.stringify(answeringStyleRaw)));
 
-const handleClueCardClick = (cardIndex) => {
+const handleClueCardClick = (cardIndex, ev) => {
     if (isMobile()) {
         return;
     }
-    console.log('click');
+    isShowTip.value = false;
     currentClueCardEl.value = clueCardEl.value[cardIndex];
-    document.body.append(currentClueCardEl.value);
+    document.body.appendChild(currentClueCardEl.value);
+    setCurrentClueCardMove(ev.pageX, ev.pageY - currentClueCardEl.value.offsetHeight / 2);
+
+    document.addEventListener('mousemove', handleClueCardMove);
 };
 
 const handleClueCardTouch = (cardIndex, ev) => {
-    console.log('touch');
     isShowTip.value = false;
     currentClueCardEl.value = clueCardEl.value[cardIndex];
     document.body.append(currentClueCardEl.value);
@@ -133,7 +135,26 @@ const handleClueCardClickOff = (cardIndex) => {
         return;
     }
     clueCardContainerEl.value.append(currentClueCardEl.value);
-    isShowHint.value = false;
+    setCurrentClueCardMove(0, 0);
+    if (isShowHint.value) {
+        isShowHint.value = false;
+
+        timelineEvents.value.splice(overOutlineCount.value, 0, clues.value[cardIndex]);
+
+        clues.value.splice(cardIndex, 1);
+        handleScore();
+        timelineEvents.value.sort((a, b) => a.year - b.year);
+        if (gameStatus.currentStep < gameStatus.totalStep) {
+            gameStatus.currentStep += 1;
+        } else {
+            isGameEnd.value = true;
+        }
+    }
+
+    answeringStyleRaw.timelineContainer.paddingTop = '180px';
+    answeringStyleRaw.timelineEvents.forEach((element, index) => {
+        answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y}px)`;
+    });
 };
 
 const handleClueCardTouchOff = (cardIndex) => {
@@ -156,7 +177,7 @@ const handleClueCardTouchOff = (cardIndex) => {
 
     answeringStyleRaw.timelineContainer.paddingTop = '180px';
     answeringStyleRaw.timelineEvents.forEach((element, index) => {
-        answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index].y}px)`;
+        answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y}px)`;
     });
 };
 const handleScore = () => {
@@ -177,7 +198,11 @@ const handleScore = () => {
 };
 
 const handleClueCardMove = (ev) => {
-    setCurrentClueCardMove(ev.touches[0].pageX, ev.touches[0].pageY - currentClueCardEl.value.offsetHeight / 2);
+    if (isMobile()) {
+        setCurrentClueCardMove(ev.touches[0].pageX, ev.touches[0].pageY - currentClueCardEl.value.offsetHeight / 2);
+    } else {
+        setCurrentClueCardMove(ev.pageX, ev.pageY - currentClueCardEl.value.offsetHeight / 2);
+    }
     handleAnswerProcess();
 };
 
@@ -190,7 +215,9 @@ const handleAnswerProcess = () => {
     const currentCardState = currentClueCardEl.value.getBoundingClientRect();
     const timelineElState = timelineEl.value.getBoundingClientRect();
     const timelineEventsElState = timelineEventsEl.value.map((el) => el.getBoundingClientRect());
+    let hintDefaultTop = 75;
     const hintHeight = hintEl.value.getBoundingClientRect().height;
+    const timelineEventMarginTop = 17;
     const timelineEventHeight = timelineEventsElState[0].height;
 
     //處理拖曳時的時間軸拉伸
@@ -204,10 +231,10 @@ const handleAnswerProcess = () => {
 
     if (gameStatus.currentStep === 1) {
         if (currentCardState.bottom > timelineEventsElState[0].bottom) {
-            answeringStyle.hint.top = `${85 + timelineEventHeight + hintHeight + 28}px`;
             overOutlineCount.value = 1;
+            answeringStyle.hint.top = `${hintDefaultTop + hintHeight + overOutlineCount.value * (timelineEventHeight + timelineEventMarginTop) + timelineEventMarginTop}px`;
         } else {
-            answeringStyle.hint.top = '85px';
+            answeringStyle.hint.top = `${hintDefaultTop}px`;
             overOutlineCount.value = 0;
         }
     }
@@ -223,17 +250,18 @@ const handleAnswerProcess = () => {
         }, 0);
         answeringStyleRaw.timelineEvents.forEach((element, index) => {
             if (index < overOutlineCount.value) {
-                answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y - hintHeight}px)`;
+                answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y - (hintHeight + timelineEventMarginTop)}px)`;
             } else {
                 answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y}px)`;
             }
         });
 
-        answeringStyleRaw.hint.top = `${80 + overOutlineCount.value * (timelineEventHeight + 17)}px`;
+        answeringStyleRaw.hint.top = `${hintDefaultTop + overOutlineCount.value * (timelineEventHeight + timelineEventMarginTop)}px`;
     }
 
     if (gameStatus.currentStep === 3) {
         //計算每張 timelineEvent 的中心線，如果超過就移動 hint
+        hintDefaultTop = -40;
         let timelineEventCenterLines = timelineEventsElState.map((el) => window.scrollY + el.top + el.height / 2);
         overOutlineCount.value = timelineEventCenterLines.reduce((acc, cur) => {
             if (currentCardState.bottom > cur) {
@@ -244,19 +272,20 @@ const handleAnswerProcess = () => {
 
         answeringStyleRaw.timelineEvents.forEach((element, index) => {
             if (index < overOutlineCount.value) {
-                answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y - hintHeight}px)`;
+                answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y - (hintHeight + timelineEventMarginTop)}px)`;
             } else {
                 answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y}px)`;
             }
         });
         if (overOutlineCount.value === 0) {
-            answeringStyleRaw.hint.top = '-40px';
+            answeringStyleRaw.hint.top = `${hintDefaultTop}px`;
         } else {
-            answeringStyleRaw.hint.top = `${-40 + overOutlineCount.value * (timelineEventHeight + 27)}px`;
+            answeringStyleRaw.hint.top = `${hintDefaultTop + overOutlineCount.value * (timelineEventHeight + timelineEventMarginTop)}px`;
         }
     }
 
     if (gameStatus.currentStep > 3) {
+        hintDefaultTop = -40;
         //計算每張 timelineEvent 的中心線，如果超過就移動 hint
         let timelineEventCenterLines = timelineEventsElState.map((el) => window.scrollY + el.top + el.height / 2);
         overOutlineCount.value = timelineEventCenterLines.reduce((acc, cur) => {
@@ -268,16 +297,18 @@ const handleAnswerProcess = () => {
 
         answeringStyleRaw.timelineEvents.forEach((element, index) => {
             if (index < overOutlineCount.value) {
-                answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index].y - hintHeight}px)`;
+                answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y - (hintHeight + timelineEventMarginTop)}px)`;
             } else {
-                answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index].y}px)`;
+                answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y}px)`;
             }
         });
 
         if (overOutlineCount.value === 0) {
-            answeringStyleRaw.hint.top = '-40px';
+            answeringStyleRaw.hint.top = `${hintDefaultTop}px`;
         } else {
-            answeringStyleRaw.hint.top = `${-40 + overOutlineCount.value * ((timelineEventHeight + 28) / 2) + hintHeight / 2}px`;
+            answeringStyleRaw.hint.top = `${
+                hintDefaultTop + (1 * (hintHeight + timelineEventHeight + timelineEventMarginTop)) / 2 + (overOutlineCount.value - 1) * (timelineEventHeight / 2 + timelineEventMarginTop)
+            }px`;
         }
     }
 };
@@ -285,60 +316,28 @@ const handleAnswerProcess = () => {
 watch(
     () => gameStatus.currentStep,
     (currentStep) => {
+        // 更新 timelineEvents 的位置
+        const updateTimelineEventsPosition = (currentStep, timelineEvents, timelinePositions) => {
+            for (let i = 0; i < currentStep; i++) {
+                timelineEvents[i].transform = `translate(-50%, ${timelinePositions[i]?.y}px)`;
+            }
+        };
+
         currentTimelinePosition.value = clueDefaultPosition[gameStatus.currentStep - 1];
-        if (currentStep === 1) {
-            answeringStyleRaw.timelineEvents[0].transform = 'translate(-50%, 160px)';
-        }
-        if (currentStep === 2) {
-            answeringStyleRaw.hint.top = '75px';
-            answeringStyleRaw.timelineEvents[0].transform = `translate(-50%, ${currentTimelinePosition.value[0].y}px)`;
-            answeringStyleRaw.timelineEvents[1].transform = `translate(-50%, ${currentTimelinePosition.value[1].y}px)`;
-        }
-        if (currentStep === 3) {
-            answeringStyleRaw.hint.top = '75px';
-            answeringStyleRaw.timelineEvents[0].transform = `translate(-50%, ${currentTimelinePosition.value[0].y}px)`;
-            answeringStyleRaw.timelineEvents[1].transform = `translate(-50%, ${currentTimelinePosition.value[1].y}px)`;
-            answeringStyleRaw.timelineEvents[2].transform = `translate(-50%, ${currentTimelinePosition.value[2].y}px)`;
-        }
-        if (currentStep === 4) {
-            answeringStyleRaw.timelineEvents[0].transform = `translate(-50%, ${currentTimelinePosition.value[0].y}px)`;
-            answeringStyleRaw.timelineEvents[1].transform = `translate(-50%, ${currentTimelinePosition.value[1].y}px)`;
-            answeringStyleRaw.timelineEvents[2].transform = `translate(-50%, ${currentTimelinePosition.value[2].y}px)`;
-            answeringStyleRaw.timelineEvents[3].transform = `translate(-50%, ${currentTimelinePosition.value[3].y}px)`;
-        }
-        if (currentStep === 5) {
-            answeringStyleRaw.timelineEvents[0].transform = `translate(-50%, ${currentTimelinePosition.value[0].y}px)`;
-            answeringStyleRaw.timelineEvents[1].transform = `translate(-50%, ${currentTimelinePosition.value[1].y}px)`;
-            answeringStyleRaw.timelineEvents[2].transform = `translate(-50%, ${currentTimelinePosition.value[2].y}px)`;
-            answeringStyleRaw.timelineEvents[3].transform = `translate(-50%, ${currentTimelinePosition.value[3].y}px)`;
-            answeringStyleRaw.timelineEvents[4].transform = `translate(-50%, ${currentTimelinePosition.value[4].y}px)`;
-        }
-        if (currentStep === 6) {
-            answeringStyleRaw.timelineEvents[0].transform = `translate(-50%, ${currentTimelinePosition.value[0].y}px)`;
-            answeringStyleRaw.timelineEvents[1].transform = `translate(-50%, ${currentTimelinePosition.value[1].y}px)`;
-            answeringStyleRaw.timelineEvents[2].transform = `translate(-50%, ${currentTimelinePosition.value[2].y}px)`;
-            answeringStyleRaw.timelineEvents[3].transform = `translate(-50%, ${currentTimelinePosition.value[3].y}px)`;
-            answeringStyleRaw.timelineEvents[4].transform = `translate(-50%, ${currentTimelinePosition.value[4].y}px)`;
-            answeringStyleRaw.timelineEvents[5].transform = `translate(-50%, ${currentTimelinePosition.value[5].y}px)`;
-        }
-        if (currentStep === 7) {
-            answeringStyleRaw.timelineEvents[0].transform = `translate(-50%, ${currentTimelinePosition.value[0].y}px)`;
-            answeringStyleRaw.timelineEvents[1].transform = `translate(-50%, ${currentTimelinePosition.value[1].y}px)`;
-            answeringStyleRaw.timelineEvents[2].transform = `translate(-50%, ${currentTimelinePosition.value[2].y}px)`;
-            answeringStyleRaw.timelineEvents[3].transform = `translate(-50%, ${currentTimelinePosition.value[3].y}px)`;
-            answeringStyleRaw.timelineEvents[4].transform = `translate(-50%, ${currentTimelinePosition.value[4].y}px)`;
-            answeringStyleRaw.timelineEvents[5].transform = `translate(-50%, ${currentTimelinePosition.value[5].y}px)`;
-            answeringStyleRaw.timelineEvents[6].transform = `translate(-50%, ${currentTimelinePosition.value[6].y}px)`;
-        }
-        if (currentStep === 8) {
-            answeringStyleRaw.timelineEvents[0].transform = `translate(-50%, ${currentTimelinePosition.value[0].y}px)`;
-            answeringStyleRaw.timelineEvents[1].transform = `translate(-50%, ${currentTimelinePosition.value[1].y}px)`;
-            answeringStyleRaw.timelineEvents[2].transform = `translate(-50%, ${currentTimelinePosition.value[2].y}px)`;
-            answeringStyleRaw.timelineEvents[3].transform = `translate(-50%, ${currentTimelinePosition.value[3].y}px)`;
-            answeringStyleRaw.timelineEvents[4].transform = `translate(-50%, ${currentTimelinePosition.value[4].y}px)`;
-            answeringStyleRaw.timelineEvents[5].transform = `translate(-50%, ${currentTimelinePosition.value[5].y}px)`;
-            answeringStyleRaw.timelineEvents[6].transform = `translate(-50%, ${currentTimelinePosition.value[6].y}px)`;
-            answeringStyleRaw.timelineEvents[7].transform = `translate(-50%, ${currentTimelinePosition.value[7].y}px)`;
+        switch (currentStep) {
+            case 1:
+                answeringStyleRaw.timelineEvents[0].transform = 'translate(-50%, 160px)';
+                break;
+            case 2:
+                answeringStyleRaw.hint.top = '75px';
+                updateTimelineEventsPosition(currentStep, answeringStyleRaw.timelineEvents, currentTimelinePosition.value);
+                break;
+            default:
+                if (currentStep >= 3) {
+                    answeringStyleRaw.hint.top = '75px';
+                    updateTimelineEventsPosition(currentStep, answeringStyleRaw.timelineEvents, currentTimelinePosition.value);
+                }
+                break;
         }
     },
 );
@@ -403,10 +402,10 @@ gameInit();
                         ref="clueCardEl"
                         v-for="(clue, index) in clues"
                         :key="clue"
-                        class="absolute top-0 left-1/2 -translate-x-1/2 flex items-center w-[360px] px-2 py-3 border rounded-lg mx-auto bg-white shadow-bottom"
+                        class="cursor-grabbing absolute top-0 left-1/2 -translate-x-1/2 flex items-center w-[360px] px-2 py-3 border rounded-lg mx-auto bg-white shadow-bottom"
                         :class="isShowTip ? 'animate-[wiggleCard_5s_infinite_forwards]' : ''"
                         v-show="clue.step === gameStatus.currentStep"
-                        @mousedown.stop="handleClueCardClick(index)"
+                        @mousedown.stop="handleClueCardClick(index, $event)"
                         @mouseup.stop="handleClueCardClickOff(index)"
                         @touchstart.stop="handleClueCardTouch(index, $event)"
                         @touchend.stop="handleClueCardTouchOff(index)"
