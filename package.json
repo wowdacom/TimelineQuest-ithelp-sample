@@ -23,6 +23,8 @@
     "@iconify-json/maki": "^1.1.20",
     "@iconify-json/pepicons-pencil": "^1.1.2",
     "@iconify-json/pepicons-print": "^1.1.7",
+    "@iconify-json/ph": "^1.1.6",
+    "@iconify-json/solar": "^1.1.2",
     "@iconify/vue": "^4.1.1",
     "@vitejs/plugin-vue": "^4.2.3",
     "autoprefixer": "^10.4.15",
