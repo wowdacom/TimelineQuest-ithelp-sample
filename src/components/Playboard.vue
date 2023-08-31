@@ -13,13 +13,15 @@ const isShowHint = ref(false);
 const timelineEvents = ref([]);
 const clues = ref([]);
 
-const gameStatus = reactive({
+const initialGameState = {
     currentStep: 1,
     totalStep: 8,
     stepCorrect: [null, null, null, null, null, null, null, null],
     score: 0,
     scoreRecord: [0, 0, 0, 0, 0, 0, 0, 0],
-});
+};
+
+const gameStatus = reactive(JSON.parse(JSON.stringify(initialGameState)));
 
 const clueCardContainerEl = ref(null);
 const clueCardEl = ref([]);
@@ -67,47 +69,40 @@ const currentTimelinePosition = ref([
     },
 ]);
 
-const answeringStyleRaw = reactive({
-    timelineContainer: {
-        paddingTop: '180px',
+const timelineEventsStyleRaw = ref([
+    {
+        transform: 'translate(-50%, 150px)',
     },
-    timelineEvents: [
-        {
-            transform: 'translate(-50%, 150px)',
-        },
-        {
-            transform: 'translate(-50%, 150px)',
-        },
-        {
-            transform: 'translate(-50%, 150px)',
-        },
-        {
-            transform: 'translate(-50%, 150px)',
-        },
-        {
-            transform: 'translate(-50%, 150px)',
-        },
-        {
-            transform: 'translate(-50%, 150px)',
-        },
-        {
-            transform: 'translate(-50%, 150px)',
-        },
-        {
-            transform: 'translate(-50%, 150px)',
-        },
-        {
-            transform: 'translate(-50%, 150px)',
-        },
-    ],
-    hint: {
-        top: '80px',
+    {
+        transform: 'translate(-50%, 150px)',
     },
-});
+    {
+        transform: 'translate(-50%, 150px)',
+    },
+    {
+        transform: 'translate(-50%, 150px)',
+    },
+    {
+        transform: 'translate(-50%, 150px)',
+    },
+    {
+        transform: 'translate(-50%, 150px)',
+    },
+    {
+        transform: 'translate(-50%, 150px)',
+    },
+    {
+        transform: 'translate(-50%, 150px)',
+    },
+    {
+        transform: 'translate(-50%, 150px)',
+    },
+]);
+
+const timelineContainerTop = ref('180px');
+const hintPostionTop = ref('80px');
 
 const overOutlineCount = ref(0);
-
-const answeringStyle = reactive(JSON.parse(JSON.stringify(answeringStyleRaw)));
 
 const handleClueCardClick = (cardIndex, ev) => {
     if (isMobile()) {
@@ -151,35 +146,42 @@ const handleClueCardClickOff = (cardIndex) => {
         }
     }
 
-    answeringStyleRaw.timelineContainer.paddingTop = '180px';
-    answeringStyleRaw.timelineEvents.forEach((element, index) => {
-        answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y}px)`;
+    handleTimelineContainerExtend(false);
+    timelineEventsStyleRaw.value.forEach((element, index) => {
+        timelineEventsStyleRaw.value[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y}px)`;
     });
 };
 
 const handleClueCardTouchOff = (cardIndex) => {
-    clueCardContainerEl.value.append(currentClueCardEl.value);
-    setCurrentClueCardMove(0, 0);
+    let isCurrentAnswerCorrect = false;
     if (isShowHint.value) {
+        //處理 DOM
+        currentClueCardEl.value.remove();
         isShowHint.value = false;
 
+        //處理資料
         timelineEvents.value.splice(overOutlineCount.value, 0, clues.value[cardIndex]);
-
         clues.value.splice(cardIndex, 1);
-        handleScore();
-        timelineEvents.value.sort((a, b) => a.year - b.year);
+
+        isCurrentAnswerCorrect = handleScore();
+
+        if (!isCurrentAnswerCorrect) {
+            handleSortedTimelineEvents();
+        }
+
         if (gameStatus.currentStep < gameStatus.totalStep) {
             gameStatus.currentStep += 1;
         } else {
+            resetTimelineEventsPosition();
             isGameEnd.value = true;
         }
+    } else {
+        setCurrentClueCardMove(0, 0);
+        clueCardContainerEl.value.append(currentClueCardEl.value);
     }
-
-    answeringStyleRaw.timelineContainer.paddingTop = '180px';
-    answeringStyleRaw.timelineEvents.forEach((element, index) => {
-        answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y}px)`;
-    });
+    handleTimelineContainerExtend(false);
 };
+
 const handleScore = () => {
     let isCorrect = false;
     let insertPostion = overOutlineCount.value;
@@ -195,6 +197,15 @@ const handleScore = () => {
     if (isCorrect) {
         gameStatus.score += timelineEvents.value[insertPostion].point;
     }
+
+    //標記 timelineEvents 是否回答正確
+    timelineEvents.value[insertPostion].isCorrect = isCorrect;
+
+    return isCorrect;
+};
+
+const handleSortedTimelineEvents = () => {
+    timelineEvents.value.sort((a, b) => a.year - b.year);
 };
 
 const handleClueCardMove = (ev) => {
@@ -212,105 +223,108 @@ const setCurrentClueCardMove = (left, top) => {
 };
 
 const handleAnswerProcess = () => {
+    let hintDefaultTop = 75;
     const currentCardState = currentClueCardEl.value.getBoundingClientRect();
     const timelineElState = timelineEl.value.getBoundingClientRect();
     const timelineEventsElState = timelineEventsEl.value.map((el) => el.getBoundingClientRect());
-    let hintDefaultTop = 75;
     const hintHeight = hintEl.value.getBoundingClientRect().height;
     const timelineEventMarginTop = 17;
     const timelineEventHeight = timelineEventsElState[0].height;
 
+    calcTimelineEventCenterLines(timelineEventsElState, currentCardState);
+
     //處理拖曳時的時間軸拉伸
     if (currentCardState.bottom > timelineElState.top) {
         isShowHint.value = true;
-        answeringStyleRaw.timelineContainer.paddingTop = '40px';
+        handleTimelineContainerExtend(true);
     } else {
         isShowHint.value = false;
-        answeringStyleRaw.timelineContainer.paddingTop = '180px';
+        handleTimelineContainerExtend(false);
     }
 
     if (gameStatus.currentStep === 1) {
         if (currentCardState.bottom > timelineEventsElState[0].bottom) {
-            overOutlineCount.value = 1;
-            answeringStyle.hint.top = `${hintDefaultTop + hintHeight + overOutlineCount.value * (timelineEventHeight + timelineEventMarginTop) + timelineEventMarginTop}px`;
+            hintPostionTop.value = `${hintDefaultTop + hintHeight + overOutlineCount.value * (timelineEventHeight + timelineEventMarginTop) + timelineEventMarginTop}px`;
         } else {
-            answeringStyle.hint.top = `${hintDefaultTop}px`;
-            overOutlineCount.value = 0;
+            hintPostionTop.value = `${hintDefaultTop}px`;
         }
     }
 
     if (gameStatus.currentStep === 2) {
         //計算每張 timelineEvent 的中心線，如果超過就移動 hint
-        let timelineEventCenterLines = timelineEventsElState.map((el) => window.scrollY + el.top + el.height / 2);
-        overOutlineCount.value = timelineEventCenterLines.reduce((acc, cur) => {
-            if (currentCardState.bottom > cur) {
-                return acc + 1;
-            }
-            return acc;
-        }, 0);
-        answeringStyleRaw.timelineEvents.forEach((element, index) => {
-            if (index < overOutlineCount.value) {
-                answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y - (hintHeight + timelineEventMarginTop)}px)`;
-            } else {
-                answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y}px)`;
-            }
-        });
 
-        answeringStyleRaw.hint.top = `${hintDefaultTop + overOutlineCount.value * (timelineEventHeight + timelineEventMarginTop)}px`;
+        calcTimelineEventsCurrentStyles(hintHeight, timelineEventMarginTop);
+        hintPostionTop.value = `${hintDefaultTop + overOutlineCount.value * (timelineEventHeight + timelineEventMarginTop)}px`;
     }
 
     if (gameStatus.currentStep === 3) {
         //計算每張 timelineEvent 的中心線，如果超過就移動 hint
         hintDefaultTop = -40;
-        let timelineEventCenterLines = timelineEventsElState.map((el) => window.scrollY + el.top + el.height / 2);
-        overOutlineCount.value = timelineEventCenterLines.reduce((acc, cur) => {
-            if (currentCardState.bottom > cur) {
-                return acc + 1;
-            }
-            return acc;
-        }, 0);
 
-        answeringStyleRaw.timelineEvents.forEach((element, index) => {
-            if (index < overOutlineCount.value) {
-                answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y - (hintHeight + timelineEventMarginTop)}px)`;
-            } else {
-                answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y}px)`;
-            }
-        });
+        calcTimelineEventsCurrentStyles(hintHeight, timelineEventMarginTop);
         if (overOutlineCount.value === 0) {
-            answeringStyleRaw.hint.top = `${hintDefaultTop}px`;
+            hintPostionTop.value = `${hintDefaultTop}px`;
         } else {
-            answeringStyleRaw.hint.top = `${hintDefaultTop + overOutlineCount.value * (timelineEventHeight + timelineEventMarginTop)}px`;
+            hintPostionTop.value = `${hintDefaultTop + overOutlineCount.value * (timelineEventHeight + timelineEventMarginTop)}px`;
         }
     }
 
     if (gameStatus.currentStep > 3) {
         hintDefaultTop = -40;
-        //計算每張 timelineEvent 的中心線，如果超過就移動 hint
-        let timelineEventCenterLines = timelineEventsElState.map((el) => window.scrollY + el.top + el.height / 2);
-        overOutlineCount.value = timelineEventCenterLines.reduce((acc, cur) => {
-            if (currentCardState.bottom > cur) {
-                return acc + 1;
-            }
-            return acc;
-        }, 0);
 
-        answeringStyleRaw.timelineEvents.forEach((element, index) => {
-            if (index < overOutlineCount.value) {
-                answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y - (hintHeight + timelineEventMarginTop)}px)`;
-            } else {
-                answeringStyleRaw.timelineEvents[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y}px)`;
-            }
-        });
-
+        calcTimelineEventsCurrentStyles(hintHeight, timelineEventMarginTop);
         if (overOutlineCount.value === 0) {
-            answeringStyleRaw.hint.top = `${hintDefaultTop}px`;
+            hintPostionTop.value = `${hintDefaultTop}px`;
         } else {
-            answeringStyleRaw.hint.top = `${
+            hintPostionTop.value = `${
                 hintDefaultTop + (1 * (hintHeight + timelineEventHeight + timelineEventMarginTop)) / 2 + (overOutlineCount.value - 1) * (timelineEventHeight / 2 + timelineEventMarginTop)
             }px`;
         }
     }
+};
+
+const calcTimelineEventCenterLines = (timelineEventsElState, currentCardState) => {
+    let timelineEventCenterLines = timelineEventsElState.map((el) => window.scrollY + el.top + el.height / 2);
+    overOutlineCount.value = timelineEventCenterLines.reduce((acc, cur) => {
+        if (currentCardState.bottom > cur) {
+            return acc + 1;
+        }
+        return acc;
+    }, 0);
+};
+
+const handleTimelineContainerExtend = (isExtend) => {
+    if (isExtend) {
+        timelineContainerTop.value = '40px';
+    } else {
+        timelineContainerTop.value = '180px';
+    }
+};
+
+const calcTimelineEventsCurrentStyles = (hintHeight, timelineEventMarginTop) => {
+    timelineEventsStyleRaw.value.forEach((element, index) => {
+        if (index < overOutlineCount.value) {
+            timelineEventsStyleRaw.value[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y - (hintHeight + timelineEventMarginTop)}px)`;
+        } else {
+            timelineEventsStyleRaw.value[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y}px)`;
+        }
+    });
+};
+
+const calcTimelineEventsAniamtionStyles = (currentAnswerIndex, hintHeight, timelineEventMarginTop) => {
+    timelineEventsStyleRaw.value.forEach((element, index) => {
+        if (index < overOutlineCount.value) {
+            timelineEventsStyleRaw.value[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y - (hintHeight + timelineEventMarginTop)}px)`;
+        } else {
+            timelineEventsStyleRaw.value[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y}px)`;
+        }
+    });
+};
+
+const resetTimelineEventsPosition = () => {
+    timelineEventsStyleRaw.value.forEach((element, index) => {
+        timelineEventsStyleRaw.value[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y}px)`;
+    });
 };
 
 watch(
@@ -326,26 +340,19 @@ watch(
         currentTimelinePosition.value = clueDefaultPosition[gameStatus.currentStep - 1];
         switch (currentStep) {
             case 1:
-                answeringStyleRaw.timelineEvents[0].transform = 'translate(-50%, 160px)';
+                timelineEventsStyleRaw.value[0].transform = 'translate(-50%, 160px)';
                 break;
             case 2:
-                answeringStyleRaw.hint.top = '75px';
-                updateTimelineEventsPosition(currentStep, answeringStyleRaw.timelineEvents, currentTimelinePosition.value);
+                hintPostionTop.value = '75px';
+                updateTimelineEventsPosition(currentStep, timelineEventsStyleRaw.value, currentTimelinePosition.value);
                 break;
             default:
                 if (currentStep >= 3) {
-                    answeringStyleRaw.hint.top = '75px';
-                    updateTimelineEventsPosition(currentStep, answeringStyleRaw.timelineEvents, currentTimelinePosition.value);
+                    hintPostionTop.value = '75px';
+                    updateTimelineEventsPosition(currentStep, timelineEventsStyleRaw.value, currentTimelinePosition.value);
                 }
                 break;
         }
-    },
-);
-
-watch(
-    () => JSON.stringify(answeringStyleRaw),
-    (newVal) => {
-        Object.assign(answeringStyle, JSON.parse(newVal));
     },
 );
 
@@ -354,8 +361,42 @@ const handleGameStart = () => {
     isShowTip.value = true;
 };
 
+const handleGameReset = () => {
+    isGameEnd.value = false;
+    isGameStart.value = false;
+    timelineEvents.value = [];
+    timelineEvents.value.push({
+        year: '2023',
+        event: '2023 iThome鐵人賽',
+        description: '在開賽期間，選擇一天開賽，並且達成連續 30 天發表技術文章不中斷，即煉成鐵人完賽。',
+        image: 'https://picsum.photos/100/100?random=17',
+        translateY: '300px',
+        point: 0,
+        step: 0,
+    });
+    clues.value = [...cluesData];
+    Object.assign(gameStatus, JSON.parse(JSON.stringify(initialGameState)));
+    currentTimelinePosition.value = clueDefaultPosition[gameStatus.currentStep - 1];
+};
+
 const handleShowInstructions = () => {
     isShowInstructions.value = !isShowInstructions.value;
+};
+
+const gameComment = (score) => {
+    let comment = '';
+
+    if (score === 0) {
+        comment = '似乎你對網頁開發的歷史還不太熟悉。沒問題的，這個遊戲就是讓你第一步了解它。';
+    } else if (score >= 1 && score <= 14) {
+        comment = '你對網頁開發有基本的了解，但進一步的學習將有助於你更深入地理解這個領域。';
+    } else if (score >= 15 && score <= 27) {
+        comment = '非常好！你對網頁開發的歷史有著很好的掌握，在這個領域幾乎是專家囉。';
+    } else if (score === 28) {
+        comment = '完美！你對網頁開發歷史是專家級別! 完全展示了深厚的知識和對這個領域的熱情。';
+    }
+
+    return comment;
 };
 
 const gameInit = () => {
@@ -415,19 +456,26 @@ gameInit();
                         <p class="text-sm font-bold">{{ clue.year + ' ' + clue.description }}</p>
                         <div class="absolute right-2 bottom-2 font-Libre text-[#b1aea4] text-sm">{{ clue.point }} 分</div>
                     </div>
-                    <div class="absolute bottom-10 right-24 translate-x-1/2 translate-y-10" v-if="isShowTip">
+                    <div class="absolute bottom-10 left-10 translate-x-1/2 translate-y-10" v-if="isShowTip">
                         <i-carbon-touch-1-filled class="animate-[wiggle_5s_infinite_forwards] text-4xl text-yellow-400" />
                         <div class="absolute w-60 -bottom-10 -left-20 -rotate-3 font-bold">將線索拖曳到時間軌跡上！</div>
                     </div>
                 </div>
-                <div v-else class="absolute h-[145px] w-full top-8 z-10 flex flex-col justify-center items-center text-center bg-gray-500 text-white rounded-lg">
+                <div v-else class="absolute h-[145px] w-full top-8 z-10 flex flex-col p-4 bg-gray-500 text-white rounded-lg">
                     <div class="text-2xl font-bold">遊戲結束</div>
-                    很厲害喔! <br />你共答對 {{ gameStatus.stepCorrect.filter((item) => item).length }} 題 <br />
-                    得分 {{ gameStatus.score }} 分
+                    <div class="mt-1">{{ gameComment(gameStatus.score) }}</div>
+                    <div class="mt-1">你共答對 {{ gameStatus.stepCorrect.filter((item) => item).length }} 題 / 得分 {{ gameStatus.score }} 分</div>
+
                     <i-majesticons-lightbulb-shine class="absolute top-4 right-10 rotate-180 text-yellow-300 text-4xl"></i-majesticons-lightbulb-shine>
+                    <div class="absolute right-0 bottom-0 text-white flex p-3 text-3xl items-center">
+                        <i-solar-restart-square-bold @click="handleGameReset" class="mr-3"></i-solar-restart-square-bold>
+                        <a target="_blank" href="https://social-plugins.line.me/lineit/share?url=https://wowdacom.github.io/TimelineQuest-ithelp-sample/">
+                            <i-ph-share-fill @click="handleLineShare" class="mr-3"></i-ph-share-fill
+                        ></a>
+                    </div>
                 </div>
                 <div ref="timelineContainerEl" class="absolute bottom-0 left-1/2 -translate-x-1/2 h-full w-full px-4">
-                    <div :style="answeringStyle.timelineContainer" class="transition-all duration-700 relative h-full flex flex-col items-center z-0">
+                    <div :style="{ paddingTop: timelineContainerTop }" class="transition-all duration-700 relative h-full flex flex-col items-center z-0">
                         <div ref="anchorBeforeEl" class="text-[#b1aea4]">BEFORE</div>
                         <div class="w-0.5 h-full bg-white"></div>
                         <div class="text-[#b1aea4] mb-4">AFTER</div>
@@ -435,7 +483,7 @@ gameInit();
                     <div ref="timelineEl" class="absolute w-full h-[480px] bottom-0 left-1/2 -translate-x-1/2">
                         <div
                             ref="hintEl"
-                            :style="answeringStyle.hint"
+                            :style="{ top: hintPostionTop }"
                             v-show="isShowHint"
                             class="w-[360px] h-[120px] bg-[#f9d988] rounded-lg absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
                         ></div>
@@ -444,12 +492,22 @@ gameInit();
                             v-for="(timelineEvent, index) in timelineEvents"
                             :key="timelineEvent.year"
                             class="mx-auto absolute top-0 left-1/2 w-[350px] bg-[#e3e0d5] rounded-lg py-[12px] px-[10px] flex items-center border-t-4 border-t-[#f2f1e7]"
-                            :style="answeringStyle.timelineEvents[index]"
+                            :style="timelineEventsStyleRaw[index]"
                         >
                             <div class="absolute left-1/2 top-0 -translate-x-1/2 translate-y-[-18px] bg-[#f2f1e7] rounded-t-full text-base px-3.5 z-3 text-[#f2f1e7] h-4">
                                 {{ timelineEvent.year }}
+                                <!-- 我是橢圓形的邊框 -->
                             </div>
-                            <div class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 bg-[#b6b3a4] rounded-full text-base px-2 py-0.5 text-white font-Libre">
+                            <div
+                                :class="
+                                    timelineEvent.isCorrect === undefined
+                                        ? 'bg-[#b6b3a4] border-[#e3e0d5]'
+                                        : timelineEvent.isCorrect
+                                        ? 'bg-[#5cb887] border-[#5cb887]'
+                                        : 'bg-[#d25353] border-[#d25353]'
+                                "
+                                class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full text-base px-2 py-0.5 text-white font-Libre"
+                            >
                                 {{ timelineEvent.year }}
                             </div>
                             <img class="w-[65px] h-[65px] shrink-0" :src="timelineEvent.image" alt="" />

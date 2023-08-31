@@ -4,7 +4,6 @@
     "event": "WorldWideWeb瀏覽器問世",
     "description": "Tim Berners-Lee創建了第一個瀏覽器WorldWideWeb，標誌著網絡的開端。",
     "image": "https://picsum.photos/100/100?random=2",
-    "translateY": "50px",
     "point": 3,
     "step": 7
   },
@@ -13,7 +12,6 @@
     "event": "JavaScript語言誕生",
     "description": "Netscape推出了JavaScript，成為首個在瀏覽器中運行的腳本語言，帶動了互動式網頁的發展。",
     "image": "https://picsum.photos/100/100?random=5",
-    "translateY": "100px",
     "point": 4,
     "step": 1
   },
@@ -22,7 +20,6 @@
     "event": "Ajax概念出現",
     "description": "Jesse James Garrett提出了Ajax（Asynchronous JavaScript and XML）概念，使得網頁可以非同步地更新數據，增強用戶體驗。",
     "image": "https://picsum.photos/100/100?random=8",
-    "translateY": "150px",
     "point": 5,
     "step": 4
   },
@@ -31,7 +28,6 @@
     "event": "HTML5規格提出",
     "description": "HTML5規格的初步草案提出，引入了許多新的標籤、API和多媒體功能，影響了網頁結構和多媒體內容。",
     "image": "https://picsum.photos/100/100?random=11",
-    "translateY": "200px",
     "point": 3,
     "step": 8
   },
@@ -40,7 +36,6 @@
     "event": "Responsive Web Design興起",
     "description": "Ethan Marcotte發表了《Responsive Web Design》一文，提倡使用彈性佈局和媒體查詢來實現跨裝置的自適應設計。",
     "image": "https://picsum.photos/100/100?random=14",
-    "translateY": "250px",
     "point": 2,
     "step": 6
   },
@@ -49,7 +44,6 @@
     "event": "React和Vue.js流行",
     "description": "Facebook開源了React，後來又出現了Vue.js，這兩個JavaScript框架的出現使得前端開發更具組織性和效率。",
     "image": "https://picsum.photos/100/100?random=17",
-    "translateY": "300px",
     "point": 5,
     "step": 2
   },
@@ -58,7 +52,6 @@
     "event": "Progressive Web Apps（PWA）概念興起",
     "description": "Google提出了PWA的概念，結合了網頁和應用程式的特點，實現了離線訪問、快速加載和優質用戶體驗。",
     "image": "https://picsum.photos/100/100?random=20",
-    "translateY": "350px",
     "point": 4,
     "step": 3
   },
@@ -67,7 +60,6 @@
     "event": "WebAssembly開始受關注",
     "description": "WebAssembly（Wasm）開始受到關注，它是一種低級虛擬機器碼，可以在瀏覽器中運行，提高網頁應用的性能和功能擴展性。",
     "image": "https://picsum.photos/100/100?random=23",
-    "translateY": "400px",
     "point": 2,
     "step": 5
   }

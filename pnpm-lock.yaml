@@ -43,6 +43,12 @@ devDependencies:
   '@iconify-json/pepicons-print':
     specifier: ^1.1.7
     version: 1.1.7
+  '@iconify-json/ph':
+    specifier: ^1.1.6
+    version: 1.1.6
+  '@iconify-json/solar':
+    specifier: ^1.1.2
+    version: 1.1.2
   '@iconify/vue':
     specifier: ^4.1.1
     version: 4.1.1(vue@3.3.4)
@@ -446,6 +452,18 @@ packages:
 
   /@iconify-json/pepicons-print@1.1.7:
     resolution: {integrity: sha512-JI4mZff2nqk8f5tf2jSitzWlI6SLJaZVob/nE0tFewGcON8xuIDh9aYz5PXMskYxCDfYV4mDLaAXZHXx2ze46g==}
+    dependencies:
+      '@iconify/types': 2.0.0
+    dev: true
+
+  /@iconify-json/ph@1.1.6:
+    resolution: {integrity: sha512-dexzEndlXQX/sbQhnEpA94Pby6JCGV2tZToSGcPPQpbilDGyk5VMd0ymusYoocRAn6+qLpGRvMoz5XFKGqP+VA==}
+    dependencies:
+      '@iconify/types': 2.0.0
+    dev: true
+
+  /@iconify-json/solar@1.1.2:
+    resolution: {integrity: sha512-9JZbqQCHva6IcoMuEj2YgA3v55i7jX4fMc6YzRbszR8gpdFpOL2y+hB05FDFMU/HWcmN4NraMOkqlqKyIv6Gyw==}
     dependencies:
       '@iconify/types': 2.0.0
     dev: true
