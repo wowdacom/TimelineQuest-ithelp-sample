@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, nextTick } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { isMobile } from '../utils/device-detect';
 import cluesData from '../assets/clues.json';
 import clueDefaultPosition from '../assets/clues_position.json';
@@ -443,11 +443,24 @@ const gameInit = () => {
 
     currentTimelinePosition.value = clueDefaultPosition[gameStatus.currentStep - 1];
 };
+
+const boardHeight = computed(() => {
+    return {
+        height: gameStatus.currentStep > 5 ? (gameStatus.currentStep - 5) * 50 + 667 + 'px' : '667px',
+    };
+});
+
+const timelineHieght = computed(() => {
+    return {
+        height: gameStatus.currentStep > 5 ? (gameStatus.currentStep - 5) * 50 + 480 + 'px' : '480px',
+    };
+});
+
 gameInit();
 </script>
 
 <template>
-    <div class="w-[375px] h-[667px] border border-light-400">
+    <div :style="boardHeight" class="w-[375px] border border-light-400">
         <div class="w-full h-full flex justify-center items-center">
             <div class="w-full h-full relative" v-if="isGameStart">
                 <div class="mx-1 h-8 flex justify-center items-center relative">
@@ -511,7 +524,7 @@ gameInit();
                         <div class="text-[#b1aea4] mb-4">AFTER</div>
                     </div>
 
-                    <div ref="timelineEl" class="absolute w-full h-[480px] bottom-0 left-1/2 -translate-x-1/2">
+                    <div ref="timelineEl" :style="timelineHieght" class="absolute w-full bottom-0 left-1/2 -translate-x-1/2">
                         <div
                             ref="hintEl"
                             :style="{ top: hintPostionTop }"
