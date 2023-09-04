@@ -397,7 +397,7 @@ const handleGameReset = () => {
         year: '2023',
         event: '2023 iThome鐵人賽',
         description: '在開賽期間，選擇一天開賽，並且達成連續 30 天發表技術文章不中斷，即煉成鐵人完賽。',
-        image: 'https://picsum.photos/100/100?random=17',
+        image: 'https://ithelp.ithome.com.tw/static/2021ironman/images/logo/ithelp.png',
         translateY: '300px',
         point: 0,
         step: 0,
@@ -433,7 +433,7 @@ const gameInit = () => {
         year: '2023',
         event: '2023 iThome鐵人賽',
         description: '在開賽期間，選擇一天開賽，並且達成連續 30 天發表技術文章不中斷，即煉成鐵人完賽。',
-        image: 'https://picsum.photos/100/100?random=17',
+        image: 'https://ithelp.ithome.com.tw/static/2021ironman/images/logo/ithelp.png',
         translateY: '300px',
         point: 0,
         step: 0,
@@ -494,8 +494,8 @@ gameInit();
                         @touchend.stop="handleClueCardTouchOff(index)"
                         @dragstart="() => false"
                     >
-                        <img class="w-[100px] h-[100px] mr-2 shrink-0" :src="clue.image" alt="" />
-                        <p class="text-sm font-bold">{{ clue.year + ' ' + clue.description }}</p>
+                        <img class="w-[100px] h-[100px] mr-2 shrink-0 object-contain bg-white" :src="clue.image" alt="" />
+                        <p class="text-sm font-bold">{{ clue.description }}</p>
                         <div class="absolute right-2 bottom-2 font-Libre text-[#b1aea4] text-sm">{{ clue.point }} 分</div>
                     </div>
                     <div class="absolute bottom-10 left-10 translate-x-1/2 translate-y-10" v-if="isShowTip">
@@ -556,7 +556,7 @@ gameInit();
                             >
                                 {{ timelineEvent.year }}
                             </div>
-                            <img class="w-[65px] h-[65px] shrink-0" :src="timelineEvent.image" alt="" />
+                            <img class="w-[65px] h-[65px] shrink-0 object-contain bg-white" :src="timelineEvent.image" alt="" />
                             <p class="px-2 text-sm text-[#5b5338] font-extrabold line-clamp-3">{{ timelineEvent.description }}</p>
                         </div>
                     </div>
