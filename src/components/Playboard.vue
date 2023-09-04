@@ -1,5 +1,5 @@
 <script setup>
-import { ref, reactive, watch } from 'vue';
+import { ref, reactive, computed } from 'vue';
 import { isMobile } from '../utils/device-detect';
 import cluesData from '../assets/clues.json';
 import clueDefaultPosition from '../assets/clues_position.json';
@@ -9,6 +9,7 @@ const isGameEnd = ref(false);
 const isShowTip = ref(false);
 const isShowInstructions = ref(false);
 const isShowHint = ref(false);
+const isAnimation = ref(false);
 
 const timelineEvents = ref([]);
 const clues = ref([]);
@@ -99,6 +100,18 @@ const timelineEventsStyleRaw = ref([
     },
 ]);
 
+const timelineEventsStyleRawAnimationTarget = ref([
+    { transform: 'translate(-50%, 150px)', zIndex: 1 },
+    { transform: 'translate(-50%, 150px)', zIndex: 2 },
+    { transform: 'translate(-50%, 150px)', zIndex: 3 },
+    { transform: 'translate(-50%, 150px)', zIndex: 4 },
+    { transform: 'translate(-50%, 150px)', zIndex: 5 },
+    { transform: 'translate(-50%, 150px)', zIndex: 6 },
+    { transform: 'translate(-50%, 150px)', zIndex: 7 },
+    { transform: 'translate(-50%, 150px)', zIndex: 8 },
+    { transform: 'translate(-50%, 150px)', zIndex: 9 },
+]);
+
 const timelineContainerTop = ref('180px');
 const hintPostionTop = ref('80px');
 
@@ -152,7 +165,7 @@ const handleClueCardClickOff = (cardIndex) => {
     });
 };
 
-const handleClueCardTouchOff = (cardIndex) => {
+const handleClueCardTouchOff = async (cardIndex) => {
     let isCurrentAnswerCorrect = false;
     if (isShowHint.value) {
         //處理 DOM
@@ -165,21 +178,31 @@ const handleClueCardTouchOff = (cardIndex) => {
 
         isCurrentAnswerCorrect = handleScore();
 
-        if (!isCurrentAnswerCorrect) {
-            handleSortedTimelineEvents();
-        }
-
         if (gameStatus.currentStep < gameStatus.totalStep) {
             gameStatus.currentStep += 1;
         } else {
             resetTimelineEventsPosition();
             isGameEnd.value = true;
         }
+
+        handleUpdateTimelinePosition(gameStatus.currentStep);
+
+        if (!isCurrentAnswerCorrect) {
+            setTimeout(() => {
+                handleUpdateTimelineTargetPosition(gameStatus.currentStep);
+                isAnimation.value = true;
+            }, 500);
+        }
     } else {
         setCurrentClueCardMove(0, 0);
         clueCardContainerEl.value.append(currentClueCardEl.value);
     }
     handleTimelineContainerExtend(false);
+};
+
+const handleAnimationEnd = () => {
+    isAnimation.value = false;
+    handleSortedTimelineEvents();
 };
 
 const handleScore = () => {
@@ -311,50 +334,55 @@ const calcTimelineEventsCurrentStyles = (hintHeight, timelineEventMarginTop) => 
     });
 };
 
-const calcTimelineEventsAniamtionStyles = (currentAnswerIndex, hintHeight, timelineEventMarginTop) => {
-    timelineEventsStyleRaw.value.forEach((element, index) => {
-        if (index < overOutlineCount.value) {
-            timelineEventsStyleRaw.value[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y - (hintHeight + timelineEventMarginTop)}px)`;
-        } else {
-            timelineEventsStyleRaw.value[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y}px)`;
-        }
-    });
-};
-
-const resetTimelineEventsPosition = () => {
+const resetTimelineEventsPosition = (currentStep) => {
     timelineEventsStyleRaw.value.forEach((element, index) => {
         timelineEventsStyleRaw.value[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y}px)`;
     });
 };
 
-watch(
-    () => gameStatus.currentStep,
-    (currentStep) => {
-        // 更新 timelineEvents 的位置
-        const updateTimelineEventsPosition = (currentStep, timelineEvents, timelinePositions) => {
-            for (let i = 0; i < currentStep; i++) {
-                timelineEvents[i].transform = `translate(-50%, ${timelinePositions[i]?.y}px)`;
-            }
-        };
+const handleUpdateTimelinePosition = (currentStep) => {
+    // 更新 timelineEvents 的位置
+    const updateTimelineEventsPosition = (currentStep, timelineEvents, timelinePositions) => {
+        for (let i = 0; i < currentStep; i++) {
+            timelineEvents[i].transform = `translate(-50%, ${timelinePositions[i]?.y}px)`;
+        }
+    };
 
-        currentTimelinePosition.value = clueDefaultPosition[gameStatus.currentStep - 1];
-        switch (currentStep) {
-            case 1:
-                timelineEventsStyleRaw.value[0].transform = 'translate(-50%, 160px)';
-                break;
-            case 2:
+    currentTimelinePosition.value = clueDefaultPosition[gameStatus.currentStep - 1];
+    switch (currentStep) {
+        case 1:
+            timelineEventsStyleRaw.value[0].transform = 'translate(-50%, 160px)';
+            break;
+        case 2:
+            hintPostionTop.value = '75px';
+            updateTimelineEventsPosition(currentStep, timelineEventsStyleRaw.value, currentTimelinePosition.value);
+            break;
+        default:
+            if (currentStep >= 3) {
                 hintPostionTop.value = '75px';
                 updateTimelineEventsPosition(currentStep, timelineEventsStyleRaw.value, currentTimelinePosition.value);
-                break;
-            default:
-                if (currentStep >= 3) {
-                    hintPostionTop.value = '75px';
-                    updateTimelineEventsPosition(currentStep, timelineEventsStyleRaw.value, currentTimelinePosition.value);
-                }
-                break;
-        }
-    },
-);
+            }
+            break;
+    }
+};
+
+const handleUpdateTimelineTargetPosition = () => {
+    let insertPostion = overOutlineCount.value;
+    const sortedTargetLists = [
+        ...timelineEvents.value.map((timelineEvent, index) => {
+            return {
+                ...timelineEvent,
+                transform: timelineEventsStyleRaw.value[index].transform,
+                zIndex: index + 10,
+            };
+        }),
+    ].sort((a, b) => a.year - b.year);
+
+    sortedTargetLists.forEach((sortedTargetList, index) => {
+        timelineEventsStyleRawAnimationTarget.value[index].transform = sortedTargetList.transform;
+        timelineEventsStyleRawAnimationTarget.value[index].zIndex = sortedTargetList.zIndex;
+    });
+};
 
 const handleGameStart = () => {
     isGameStart.value = true;
@@ -377,6 +405,7 @@ const handleGameReset = () => {
     clues.value = [...cluesData];
     Object.assign(gameStatus, JSON.parse(JSON.stringify(initialGameState)));
     currentTimelinePosition.value = clueDefaultPosition[gameStatus.currentStep - 1];
+    handleUpdateTimelinePosition(gameStatus.currentStep);
 };
 
 const handleShowInstructions = () => {
@@ -414,11 +443,24 @@ const gameInit = () => {
 
     currentTimelinePosition.value = clueDefaultPosition[gameStatus.currentStep - 1];
 };
+
+const boardHeight = computed(() => {
+    return {
+        height: gameStatus.currentStep > 5 ? (gameStatus.currentStep - 5) * 50 + 667 + 'px' : '667px',
+    };
+});
+
+const timelineHieght = computed(() => {
+    return {
+        height: gameStatus.currentStep > 5 ? (gameStatus.currentStep - 5) * 50 + 480 + 'px' : '480px',
+    };
+});
+
 gameInit();
 </script>
 
 <template>
-    <div class="w-[375px] h-[667px] border border-light-400">
+    <div :style="boardHeight" class="w-[375px] border border-light-400">
         <div class="w-full h-full flex justify-center items-center">
             <div class="w-full h-full relative" v-if="isGameStart">
                 <div class="mx-1 h-8 flex justify-center items-center relative">
@@ -474,13 +516,15 @@ gameInit();
                         ></a>
                     </div>
                 </div>
+
                 <div ref="timelineContainerEl" class="absolute bottom-0 left-1/2 -translate-x-1/2 h-full w-full px-4">
                     <div :style="{ paddingTop: timelineContainerTop }" class="transition-all duration-700 relative h-full flex flex-col items-center z-0">
                         <div ref="anchorBeforeEl" class="text-[#b1aea4]">BEFORE</div>
                         <div class="w-0.5 h-full bg-white"></div>
                         <div class="text-[#b1aea4] mb-4">AFTER</div>
                     </div>
-                    <div ref="timelineEl" class="absolute w-full h-[480px] bottom-0 left-1/2 -translate-x-1/2">
+
+                    <div ref="timelineEl" :style="timelineHieght" class="absolute w-full bottom-0 left-1/2 -translate-x-1/2">
                         <div
                             ref="hintEl"
                             :style="{ top: hintPostionTop }"
@@ -492,7 +536,9 @@ gameInit();
                             v-for="(timelineEvent, index) in timelineEvents"
                             :key="timelineEvent.year"
                             class="mx-auto absolute top-0 left-1/2 w-[350px] bg-[#e3e0d5] rounded-lg py-[12px] px-[10px] flex items-center border-t-4 border-t-[#f2f1e7]"
-                            :style="timelineEventsStyleRaw[index]"
+                            :class="isAnimation ? 'transition-transform duration-500' : ''"
+                            :style="isAnimation ? timelineEventsStyleRawAnimationTarget[index] : timelineEventsStyleRaw[index]"
+                            @transitionend="handleAnimationEnd"
                         >
                             <div class="absolute left-1/2 top-0 -translate-x-1/2 translate-y-[-18px] bg-[#f2f1e7] rounded-t-full text-base px-3.5 z-3 text-[#f2f1e7] h-4">
                                 {{ timelineEvent.year }}
@@ -567,4 +613,13 @@ gameInit();
 </template>
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@700&display=swap');
+.list-enter-active,
+.list-leave-active {
+    transition: all 1s ease;
+}
+.list-enter-from,
+.list-leave-to {
+    opacity: 0;
+    transform: translateX(30px);
+}
 </style>
