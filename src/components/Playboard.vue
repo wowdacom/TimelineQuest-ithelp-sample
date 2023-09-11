@@ -130,6 +130,7 @@ const handleClueCardClick = (cardIndex, ev) => {
 };
 
 const handleClueCardTouch = (cardIndex, ev) => {
+    ev.preventDefault();
     isShowTip.value = false;
     currentClueCardEl.value = clueCardEl.value[cardIndex];
     document.body.append(currentClueCardEl.value);
@@ -165,7 +166,8 @@ const handleClueCardClickOff = (cardIndex) => {
     });
 };
 
-const handleClueCardTouchOff = async (cardIndex) => {
+const handleClueCardTouchOff = async (cardIndex, ev) => {
+    ev.preventDefault();
     let isCurrentAnswerCorrect = false;
     if (isShowHint.value) {
         //處理 DOM
@@ -232,6 +234,7 @@ const handleSortedTimelineEvents = () => {
 };
 
 const handleClueCardMove = (ev) => {
+    ev.preventDefault();
     if (isMobile()) {
         setCurrentClueCardMove(ev.touches[0].pageX, ev.touches[0].pageY - currentClueCardEl.value.offsetHeight / 2);
     } else {
@@ -491,7 +494,7 @@ gameInit();
                         @mousedown.stop="handleClueCardClick(index, $event)"
                         @mouseup.stop="handleClueCardClickOff(index)"
                         @touchstart.stop="handleClueCardTouch(index, $event)"
-                        @touchend.stop="handleClueCardTouchOff(index)"
+                        @touchend.stop="handleClueCardTouchOff(index, $event)"
                         @dragstart="() => false"
                     >
                         <img class="w-[100px] h-[100px] mr-2 shrink-0 object-contain bg-white" :src="clue.image" alt="" />
