@@ -117,6 +117,10 @@ const hintPostionTop = ref('80px');
 
 const overOutlineCount = ref(0);
 
+const currentYear = new Date().getFullYear();
+const yearOptions = Array.from({ length: 100 }, (_, i) => currentYear - i);
+const selectedYear = ref(currentYear);
+
 const handleClueCardClick = (cardIndex, ev) => {
     if (isMobile()) {
         return;
@@ -390,24 +394,13 @@ const handleUpdateTimelineTargetPosition = () => {
 const handleGameStart = () => {
     isGameStart.value = true;
     isShowTip.value = true;
+    gameInit();
 };
 
 const handleGameReset = () => {
     isGameEnd.value = false;
     isGameStart.value = false;
-    timelineEvents.value = [];
-    timelineEvents.value.push({
-        year: '2023',
-        event: '2023 iThome鐵人賽',
-        description: '在開賽期間，選擇一天開賽，並且達成連續 30 天發表技術文章不中斷，即煉成鐵人完賽。',
-        image: 'https://ithelp.ithome.com.tw/static/2021ironman/images/logo/ithelp.png',
-        translateY: '300px',
-        point: 0,
-        step: 0,
-    });
-    clues.value = [...cluesData];
     Object.assign(gameStatus, JSON.parse(JSON.stringify(initialGameState)));
-    currentTimelinePosition.value = clueDefaultPosition[gameStatus.currentStep - 1];
     handleUpdateTimelinePosition(gameStatus.currentStep);
 };
 
@@ -432,11 +425,12 @@ const gameComment = (score) => {
 };
 
 const gameInit = () => {
+    timelineEvents.value = [];
     timelineEvents.value.push({
-        year: '2023',
-        event: '2023 iThome鐵人賽',
-        description: '在開賽期間，選擇一天開賽，並且達成連續 30 天發表技術文章不中斷，即煉成鐵人完賽。',
-        image: 'https://ithelp.ithome.com.tw/static/2021ironman/images/logo/ithelp.png',
+        year: selectedYear.value,
+        event: '一個孩子誕生囉!',
+        description: '慶祝生命的多彩多姿，每一刻都值得紀念和珍惜。',
+        image: 'https://i.imgur.com/xTWeFPu.jpg',
         translateY: '300px',
         point: 0,
         step: 0,
@@ -458,8 +452,6 @@ const timelineHieght = computed(() => {
         height: gameStatus.currentStep > 5 ? (gameStatus.currentStep - 5) * 50 + 480 + 'px' : '480px',
     };
 });
-
-gameInit();
 </script>
 
 <template>
@@ -522,7 +514,7 @@ gameInit();
 
                 <div ref="timelineContainerEl" class="absolute bottom-0 left-1/2 -translate-x-1/2 h-full w-full px-4">
                     <div :style="{ paddingTop: timelineContainerTop }" class="transition-all duration-700 relative h-full flex flex-col items-center z-0">
-                        <div ref="anchorBeforeEl" class="text-[#b1aea4]">BEFORE</div>
+                        <div class="text-[#b1aea4]">BEFORE</div>
                         <div class="w-0.5 h-full bg-white"></div>
                         <div class="text-[#b1aea4] mb-4">AFTER</div>
                     </div>
@@ -572,7 +564,13 @@ gameInit();
                 <i-clarity-beta-solid class="text-5xl text-[#5D72C8] opacity-30" />
                 <h1 class="text-4xl font-extrabold mb-3">時間線任務</h1>
                 <h4 class="mb-5 text-[#b1aea4]">2023年9月1日</h4>
-                <h2 class="mb-2 text-center">你能把八個重要事件<br />按照時間順序排列嗎？</h2>
+                <h2 class="mb-2 text-center">你能把八個重要事件<br />按照人生前後順序排列嗎？</h2>
+                <div class="mb-2 flex">
+                    <h1>選擇出生年份</h1>
+                    <select v-model="selectedYear">
+                        <option v-for="year in yearOptions" :key="year" :value="year">{{ year }}</option>
+                    </select>
+                </div>
                 <button @click="handleGameStart" class="rounded-full border w-[150px] h-[40px] bg-[#5d72c9] text-white">開始遊戲 <i-maki-arrow class="inline-block" /></button>
             </div>
         </div>
