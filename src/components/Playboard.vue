@@ -197,13 +197,14 @@ const handleClueCardTouchOff = async (cardIndex, ev) => {
             setTimeout(() => {
                 handleUpdateTimelineTargetPosition(gameStatus.currentStep);
                 isAnimation.value = true;
-            }, 500);
+            }, 0);
         }
     } else {
         setCurrentClueCardMove(0, 0);
         clueCardContainerEl.value.append(currentClueCardEl.value);
     }
     handleTimelineContainerExtend(false);
+    document.removeEventListener('touchmove', handleClueCardMove);
 };
 
 const handleAnimationEnd = () => {
@@ -564,7 +565,7 @@ const timelineHieght = computed(() => {
                 <i-clarity-beta-solid class="text-5xl text-[#5D72C8] opacity-30" />
                 <h1 class="text-4xl font-extrabold mb-3">時間線任務</h1>
                 <h4 class="mb-5 text-[#b1aea4]">2023年9月1日</h4>
-                <h2 class="mb-2 text-center">你能把八個重要事件<br />按照人生前後順序排列嗎？</h2>
+                <h2 class="mb-2 text-center">你能把八個重要事件<br />按自己出生前後順序排列嗎？</h2>
                 <div class="mb-2 flex">
                     <h1>選擇出生年份</h1>
                     <select v-model="selectedYear">
