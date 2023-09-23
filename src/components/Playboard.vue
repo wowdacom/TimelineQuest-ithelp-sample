@@ -134,11 +134,12 @@ const handleClueCardClick = (cardIndex, ev) => {
 };
 
 const handleClueCardTouch = (cardIndex, ev) => {
+
     ev.preventDefault();
     isShowTip.value = false;
     currentClueCardEl.value = clueCardEl.value[cardIndex];
     document.body.append(currentClueCardEl.value);
-    setCurrentClueCardMove(ev.touches[0].pageX, ev.touches[0].pageY - currentClueCardEl.value.offsetHeight / 2);
+    setCurrentClueCardMove(ev.touches ? ev.touches[0]?.pageX : ev.pageX, (ev.touches ? ev.touches[0]?.pageY : ev.pageY) - currentClueCardEl.value.offsetHeight / 2);
 
     document.addEventListener('touchmove', handleClueCardMove);
 };
@@ -225,13 +226,18 @@ const handleScore = () => {
 
     gameStatus.stepCorrect[gameStatus.currentStep - 1] = isCorrect;
     if (isCorrect) {
-        gameStatus.score += timelineEvents.value[insertPostion].point;
+        gameStatus.scoreRecord[gameStatus.currentStep - 1] = timelineEvents.value[insertPostion].point;
+        gameStatus.score = getTotalScore()
     }
 
     //標記 timelineEvents 是否回答正確
     timelineEvents.value[insertPostion].isCorrect = isCorrect;
 
     return isCorrect;
+};
+
+const getTotalScore = () => {
+    return gameStatus.scoreRecord.reduce((acc, cur) => acc + cur, 0);
 };
 
 const handleSortedTimelineEvents = () => {
@@ -241,7 +247,7 @@ const handleSortedTimelineEvents = () => {
 const handleClueCardMove = (ev) => {
     ev.preventDefault();
     if (isMobile()) {
-        setCurrentClueCardMove(ev.touches[0].pageX, ev.touches[0].pageY - currentClueCardEl.value.offsetHeight / 2);
+        setCurrentClueCardMove(ev.touches ? ev.touches[0]?.pageX : ev.pageX, (ev.touches ? ev.touches[0]?.pageY : ev.pageY) - currentClueCardEl.value.offsetHeight / 2);
     } else {
         setCurrentClueCardMove(ev.pageX, ev.pageY - currentClueCardEl.value.offsetHeight / 2);
     }
@@ -480,7 +486,10 @@ const timelineHieght = computed(() => {
               ]"
             />
           </ul>
-          <div class="ml-2 text-sm font-Libre">
+          <div
+            data-test="score"
+            class="ml-2 text-sm font-Libre"
+          >
             {{ gameStatus.score }} 分
           </div>
           <div
@@ -500,6 +509,7 @@ const timelineHieght = computed(() => {
             v-show="clue.step === gameStatus.currentStep"
             ref="clueCardEl"
             :key="clue"
+            :data-test="clue.step === gameStatus.currentStep ? 'clue-card' : 'clue-card-hidden'"
             class="cursor-grabbing absolute top-0 left-1/2 -translate-x-1/2 flex items-center w-[360px] px-2 py-3 border rounded-lg mx-auto bg-white shadow-bottom"
             :class="isShowTip ? 'animate-[wiggleCard_5s_infinite_forwards]' : ''"
             @mousedown.stop="handleClueCardClick(index, $event)"
@@ -581,6 +591,7 @@ const timelineHieght = computed(() => {
 
           <div
             ref="timelineEl"
+            data-test="timeline"
             :style="timelineHieght"
             class="absolute w-full bottom-0 left-1/2 -translate-x-1/2"
           >
@@ -611,6 +622,7 @@ const timelineHieght = computed(() => {
                       ? 'bg-[#5cb887] border-[#5cb887]'
                       : 'bg-[#d25353] border-[#d25353]'
                 "
+                :data-test="timelineEvent.isCorrect === undefined ? 'default' : timelineEvent.isCorrect ? 'timeline-event-year-correct' : 'timeline-event-year-wrong'"
                 class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full text-base px-2 py-0.5 text-white font-Libre"
               >
                 {{ timelineEvent.year }}
@@ -638,7 +650,10 @@ const timelineHieght = computed(() => {
           <i-healthicons-question-mark class="text-sm" />
         </div>
         <i-clarity-beta-solid class="text-5xl text-[#5D72C8] opacity-30" />
-        <h1 class="text-4xl font-extrabold mb-3">
+        <h1
+          data-test="title"
+          class="text-4xl font-extrabold mb-3"
+        >
           時間線任務
         </h1>
         <h4 class="mb-5 text-[#b1aea4]">
@@ -660,6 +675,7 @@ const timelineHieght = computed(() => {
           </select>
         </div>
         <button
+          data-test="game-start-btn"
           class="rounded-full border w-[150px] h-[40px] bg-[#5d72c9] text-white"
           @click="handleGameStart"
         >
