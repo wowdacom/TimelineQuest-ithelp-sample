@@ -121,7 +121,7 @@ const currentYear = new Date().getFullYear();
 const yearOptions = Array.from({ length: 100 }, (_, i) => currentYear - i);
 const selectedYear = ref(currentYear);
 
-const handleClueCardClick = (cardIndex, ev) => {
+const handleClueCardMouseDown = (cardIndex, ev) => {
     if (isMobile()) {
         return;
     }
@@ -144,31 +144,41 @@ const handleClueCardTouch = (cardIndex, ev) => {
     document.addEventListener('touchmove', handleClueCardMove);
 };
 
-const handleClueCardClickOff = (cardIndex) => {
-    if (isMobile()) {
-        return;
-    }
-    clueCardContainerEl.value.append(currentClueCardEl.value);
-    setCurrentClueCardMove(0, 0);
+const handleClueCardMouseOff = (cardIndex, ev) => {
+  ev.preventDefault();
+    let isCurrentAnswerCorrect = false;
     if (isShowHint.value) {
+        //處理 DOM
+        currentClueCardEl.value.remove();
         isShowHint.value = false;
 
+        //處理資料
         timelineEvents.value.splice(overOutlineCount.value, 0, clues.value[cardIndex]);
-
         clues.value.splice(cardIndex, 1);
-        handleScore();
-        timelineEvents.value.sort((a, b) => a.year - b.year);
+
+        isCurrentAnswerCorrect = handleScore();
+
         if (gameStatus.currentStep < gameStatus.totalStep) {
             gameStatus.currentStep += 1;
         } else {
+            resetTimelineEventsPosition();
             isGameEnd.value = true;
         }
-    }
 
+        handleUpdateTimelinePosition(gameStatus.currentStep);
+
+        if (!isCurrentAnswerCorrect) {
+            setTimeout(() => {
+                handleUpdateTimelineTargetPosition(gameStatus.currentStep);
+                isAnimation.value = true;
+            }, 0);
+        }
+    } else {
+        setCurrentClueCardMove(0, 0);
+        clueCardContainerEl.value.append(currentClueCardEl.value);
+    }
     handleTimelineContainerExtend(false);
-    timelineEventsStyleRaw.value.forEach((element, index) => {
-        timelineEventsStyleRaw.value[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y}px)`;
-    });
+    document.removeEventListener('mousemove', handleClueCardMove);
 };
 
 const handleClueCardTouchOff = async (cardIndex, ev) => {
@@ -512,8 +522,8 @@ const timelineHieght = computed(() => {
             :data-test="clue.step === gameStatus.currentStep ? 'clue-card' : 'clue-card-hidden'"
             class="cursor-grabbing absolute top-0 left-1/2 -translate-x-1/2 flex items-center w-[360px] px-2 py-3 border rounded-lg mx-auto bg-white shadow-bottom"
             :class="isShowTip ? 'animate-[wiggleCard_5s_infinite_forwards]' : ''"
-            @mousedown.stop="handleClueCardClick(index, $event)"
-            @mouseup.stop="handleClueCardClickOff(index)"
+            @mousedown.stop="handleClueCardMouseDown(index, $event)"
+            @mouseup.stop="handleClueCardMouseOff(index, $event)"
             @touchstart.stop="handleClueCardTouch(index, $event)"
             @touchend.stop="handleClueCardTouchOff(index, $event)"
             @dragstart="() => false"
