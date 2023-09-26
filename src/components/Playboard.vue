@@ -473,8 +473,18 @@ const timelineHieght = computed(() => {
 
 <template>
   <div
+    v-for="clue in cluesData"
+    v-show="!isGameStart"
+    :key="clue.year"
+    class="animate-[radiation_11s_infinite_forwards] absolute text-[#d8d5ca] text-6xl font-black rotate-0 "
+    :style="{ 'offset-path': clue.offsetPath, 'animation-delay': clue.animationDelay, 'offset-rotate': '0deg' }"
+  >
+    {{ clue.year }}
+  </div>
+  <div
     :style="boardHeight"
-    class="w-[375px] border border-light-400"
+    class="w-[375px]"
+    :class="isGameStart ? 'border border-light-400 rounded-md' : ''"
   >
     <div class="w-full h-full flex justify-center items-center">
       <div
