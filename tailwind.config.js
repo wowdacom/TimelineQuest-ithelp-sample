@@ -11,10 +11,9 @@ export default {
             },
             keyframes: {
                 wiggle: {
-                    '10%': { transform: 'scale(1)', opacity: 1 },
-                    '20%': { transform: 'scale(0.9)', opacity: 1 },
-                    '80%': { transform: 'scale(0.9) translateY(15px)', opacity: 1 },
-                    '90%': { opacity: 1 },
+                    '10%': { transform: 'scale(1)' },
+                    '20%': { transform: 'scale(0.9)' },
+                    '80%': { transform: 'scale(0.9) translateY(15px)' },
                 },
                 wiggleCard: {
                     '0%': { transform: 'translate(-50%,5px)' },
