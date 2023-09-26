@@ -20,6 +20,11 @@ export default {
                     '20%': { transform: 'translate(-50%,5px)' },
                     '80%': { transform: 'translate(-50%,15px)' },
                 },
+                radiation: {
+                    '0%': { offsetDistance: '0%', opacity: '1', transform: 'scale(0.8)' },
+                    '99%': { offsetDistance: '100%', opacity: '0', transform: 'scale(3)'  },
+                    '100%': { offsetDistance: '0%', opacity: '0', transform: 'scale(0.8)'  },
+                }
             },
         },
     },
