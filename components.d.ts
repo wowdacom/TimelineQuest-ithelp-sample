@@ -18,5 +18,6 @@ declare module 'vue' {
     Playboard: typeof import('./src/components/Playboard.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    RuleDeclaration: typeof import('./src/components/RuleDeclaration.vue')['default']
   }
 }
