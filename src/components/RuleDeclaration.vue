@@ -1,18 +1,15 @@
 <template>
-  <div
-    class="h-5 border-2 border-[#b1aea4] text-[#b1aea4] rounded-full"
-    @click="handleShowInstructions"
-  >
-    <i-healthicons-question-mark class="text-sm" />
-    <Teleport to="body">
-      <div
-        v-if="isShowInstructions"
-        class="mx-auto w-11/12 px-4 py-12 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-white rounded-lg z-20"
-      >
-        <i-iconoir-cancel
-          class="absolute right-2 top-2 text-xl"
-          @click="handleShowInstructions"
+  <div>
+    <Lightbox
+      :is-show="isShowInstructions"
+      @update:is-show="handleShowInstructions"
+    >
+      <template #lightbox-trigger>
+        <i-healthicons-question-mark
+          class="text-sm"
         />
+      </template>
+      <template #lightbox-content>
         <h1 class="text-2xl font-bold mb-6 text-center">
           怎麼玩時間線任務
         </h1>
@@ -55,19 +52,16 @@
           </p>
           <p>編輯根據時報的報導選擇線索。每一份被推動的社會進步將會有一個新的問答遊戲。</p>
         </div>
-      </div>
-    </Teleport>
+      </template>
+    </Lightbox>
   </div>
 </template>
 
 <script setup>
+import Lightbox from './Lightbox.vue';
 import { ref } from 'vue';
-const isShowInstructions = ref(false);
-const handleShowInstructions = () => {
-    isShowInstructions.value = !isShowInstructions.value;
-};
+  const isShowInstructions = ref(false);
+  const handleShowInstructions = (ev) => {
+      isShowInstructions.value = ev;
+  };
 </script>
-
-<style lang="scss" scoped>
-
-</style>

@@ -15,6 +15,7 @@ declare module 'vue' {
     IMakiArrow: typeof import('~icons/maki/arrow')['default']
     IPhShareFill: typeof import('~icons/ph/share-fill')['default']
     ISolarRestartSquareBold: typeof import('~icons/solar/restart-square-bold')['default']
+    Lightbox: typeof import('./src/components/Lightbox.vue')['default']
     Playboard: typeof import('./src/components/Playboard.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
