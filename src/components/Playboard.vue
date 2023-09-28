@@ -6,7 +6,7 @@ import clueDefaultPosition from '../assets/clues_position.json';
 
 const isGameStart = ref(false);
 const isGameEnd = ref(false);
-const isShowTip = ref(false);
+const isShowTip = ref(true);
 
 const isShowHint = ref(false);
 const isAnimation = ref(false);
@@ -125,7 +125,7 @@ const handleClueCardMouseDown = (cardIndex, ev) => {
     if (isMobile()) {
         return;
     }
-    isShowTip.value = false;
+    toggleShowTip();
     currentClueCardEl.value = clueCardEl.value[cardIndex];
     document.body.appendChild(currentClueCardEl.value);
     setCurrentClueCardMove(ev.pageX, ev.pageY - currentClueCardEl.value.offsetHeight / 2);
@@ -136,12 +136,18 @@ const handleClueCardMouseDown = (cardIndex, ev) => {
 const handleClueCardTouch = (cardIndex, ev) => {
 
     ev.preventDefault();
-    isShowTip.value = false;
+    toggleShowTip();
     currentClueCardEl.value = clueCardEl.value[cardIndex];
     document.body.append(currentClueCardEl.value);
-    setCurrentClueCardMove(ev.touches ? ev.touches[0]?.pageX : ev.pageX, (ev.touches ? ev.touches[0]?.pageY : ev.pageY) - currentClueCardEl.value.offsetHeight / 2);
-
+    initCardAndFingerPosition(ev);
     document.addEventListener('touchmove', handleClueCardMove);
+};
+
+// 初始化卡片和手指的位置
+const initCardAndFingerPosition = (ev) => {
+    const x = ev.touches ? ev.touches[0]?.pageX : ev.pageX;
+    const y = (ev.touches ? ev.touches[0]?.pageY : ev.pageY) - currentClueCardEl.value.offsetHeight / 2;
+    setCurrentClueCardMove(x, y);
 };
 
 const handleClueCardMouseOff = (cardIndex, ev) => {
@@ -183,28 +189,13 @@ const handleClueCardMouseOff = (cardIndex, ev) => {
 
 const handleClueCardTouchOff = async (cardIndex, ev) => {
     ev.preventDefault();
-    let isCurrentAnswerCorrect = false;
     if (isShowHint.value) {
-        //處理 DOM
-        currentClueCardEl.value.remove();
-        isShowHint.value = false;
-
-        //處理資料
-        timelineEvents.value.splice(overOutlineCount.value, 0, clues.value[cardIndex]);
-        clues.value.splice(cardIndex, 1);
-
-        isCurrentAnswerCorrect = handleScore();
-
-        if (gameStatus.currentStep < gameStatus.totalStep) {
-            gameStatus.currentStep += 1;
-        } else {
-            resetTimelineEventsPosition();
-            isGameEnd.value = true;
-        }
-
+        handleDOMOperations()
+        handleDataOperations()
+        handleGameStatus();
         handleUpdateTimelinePosition(gameStatus.currentStep);
 
-        if (!isCurrentAnswerCorrect) {
+        if (!handleScore()) {
             setTimeout(() => {
                 handleUpdateTimelineTargetPosition(gameStatus.currentStep);
                 isAnimation.value = true;
@@ -216,6 +207,27 @@ const handleClueCardTouchOff = async (cardIndex, ev) => {
     }
     handleTimelineContainerExtend(false);
     document.removeEventListener('touchmove', handleClueCardMove);
+};
+// 處理 DOM 相關操作
+const handleDOMOperations = () => {
+    currentClueCardEl.value.remove();
+    isShowHint.value = false;
+};
+
+// 處理資料相關操作
+const handleDataOperations = (cardIndex) => {
+    timelineEvents.value.splice(overOutlineCount.value, 0, clues.value[cardIndex]);
+    clues.value.splice(cardIndex, 1);
+};
+
+// 處理遊戲狀態
+const handleGameStatus = () => {
+    if (gameStatus.currentStep < gameStatus.totalStep) {
+        gameStatus.currentStep += 1;
+    } else {
+        resetTimelineEventsPosition();
+        isGameEnd.value = true;
+    }
 };
 
 const handleAnimationEnd = () => {
@@ -409,7 +421,6 @@ const handleUpdateTimelineTargetPosition = () => {
 
 const handleGameStart = () => {
     isGameStart.value = true;
-    isShowTip.value = true;
     gameInit();
 };
 
@@ -418,6 +429,14 @@ const handleGameReset = () => {
     isGameStart.value = false;
     Object.assign(gameStatus, JSON.parse(JSON.stringify(initialGameState)));
     handleUpdateTimelinePosition(gameStatus.currentStep);
+};
+
+// 切換 isShowTip 的狀態
+const toggleShowTip = () => {
+    if(!isShowTip.value) {
+        return;
+    }
+    isShowTip.value = !isShowTip.value;
 };
 
 
