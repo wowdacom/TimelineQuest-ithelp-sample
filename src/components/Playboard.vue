@@ -2,7 +2,6 @@
 import { ref, reactive, computed } from 'vue';
 import { isMobile } from '../utils/device-detect';
 import cluesData from '../assets/clues.json';
-import clueDefaultPosition from '../assets/clues_position.json';
 
 const isGameStart = ref(false);
 const isGameEnd = ref(false);
@@ -16,10 +15,10 @@ const clues = ref([]);
 
 const initialGameState = {
     currentStep: 1,
-    totalStep: 8,
-    stepCorrect: [null, null, null, null, null, null, null, null],
+    totalStep: cluesData.length,
+    stepCorrect: Array(cluesData.length).fill(null),
     score: 0,
-    scoreRecord: [0, 0, 0, 0, 0, 0, 0, 0],
+    scoreRecord: Array(cluesData.length).fill(0),
 };
 
 const gameStatus = reactive(JSON.parse(JSON.stringify(initialGameState)));
@@ -30,87 +29,72 @@ const currentClueCardEl = ref(null);
 const hintEl = ref(null);
 const timelineEl = ref(null);
 const timelineEventsEl = ref([]);
+const totalQuestions = cluesData.length; // 這個數字可以根據你的需要來設定
+const initialTransform = 'translate(-50%, 150px)'; // 初始的 transform 值
+const zIndexStart = 1; // zIndex 的起始值
 
-const currentTimelinePosition = ref([
-    {
-        x: '50%',
-        y: 40,
-    },
-    {
-        x: '50%',
-        y: 100,
-    },
-    {
-        x: '50%',
-        y: 160,
-    },
-    {
-        x: '50%',
-        y: 220,
-    },
-    {
-        x: '50%',
-        y: 280,
-    },
-    {
-        x: '50%',
-        y: 340,
-    },
-    {
-        x: '50%',
-        y: 400,
-    },
-    {
-        x: '50%',
-        y: 460,
-    },
-    {
-        x: '50%',
-        y: 520,
-    },
-]);
+const currentTimelinePosition = ref((() => {
+  const positions = [];
+  let yPosition = 40;
+  const yIncrement = 60; // y座標每次增加的數量，你可以根據需要來調整
 
-const timelineEventsStyleRaw = ref([
-    {
-        transform: 'translate(-50%, 150px)',
-    },
-    {
-        transform: 'translate(-50%, 150px)',
-    },
-    {
-        transform: 'translate(-50%, 150px)',
-    },
-    {
-        transform: 'translate(-50%, 150px)',
-    },
-    {
-        transform: 'translate(-50%, 150px)',
-    },
-    {
-        transform: 'translate(-50%, 150px)',
-    },
-    {
-        transform: 'translate(-50%, 150px)',
-    },
-    {
-        transform: 'translate(-50%, 150px)',
-    },
-    {
-        transform: 'translate(-50%, 150px)',
-    },
-]);
+  for (let i = 0; i < totalQuestions + 1; i++) {
+    positions.push({
+      x: '50%',
+      y: yPosition,
+    });
+    yPosition += yIncrement;
+  }
 
-const timelineEventsStyleRawAnimationTarget = ref([
-    { transform: 'translate(-50%, 150px)', zIndex: 1 },
-    { transform: 'translate(-50%, 150px)', zIndex: 2 },
-    { transform: 'translate(-50%, 150px)', zIndex: 3 },
-    { transform: 'translate(-50%, 150px)', zIndex: 4 },
-    { transform: 'translate(-50%, 150px)', zIndex: 5 },
-    { transform: 'translate(-50%, 150px)', zIndex: 6 },
-    { transform: 'translate(-50%, 150px)', zIndex: 7 },
-    { transform: 'translate(-50%, 150px)', zIndex: 8 },
-    { transform: 'translate(-50%, 150px)', zIndex: 9 },
-]);
+  return positions;
+})());
+
+const timelineEventsStyleRaw = ref((() => {
+  const styles = [];
+  for (let i = 0; i < totalQuestions + 1; i++) {
+    styles.push({
+      transform: initialTransform,
+    });
+  }
+  return styles;
+})());
+
+const timelineEventsStyleRawAnimationTarget = ref((() => {
+  const styles = [];
+  for (let i = 0; i < totalQuestions + 1; i++) {
+    styles.push({
+      transform: initialTransform,
+      zIndex: zIndexStart + i,
+    });
+  }
+  return styles;
+})());
+
+const clueDefaultPosition = ref((function generateData() {
+  const data = [];
+  const initialY = 40;
+  const step = 60;
+
+  // 第一個子陣列
+  data.push([{ "x": "-50%", "y": 150 }]);
+
+  // 第二個子陣列
+  data.push([
+    { "x": "50%", "y": 150 },
+    { "x": "50%", "y": 260 }
+  ]);
+
+  // 從第三個子陣列開始
+  for (let i = 3; i <= totalQuestions + 1; i++) {
+    const subArray = [];
+    for (let j = 0; j < i; j++) {
+      subArray.push({ "x": "50%", "y": initialY + j * step });
+    }
+    data.push(subArray);
+  }
+
+  return data;
+})());
 
 const timelineContainerTop = ref('180px');
 const hintPostionTop = ref('80px');
@@ -147,6 +131,7 @@ const handleClueCardTouch = (cardIndex, ev) => {
 const handleClueCardMouseOff = (cardIndex, ev) => {
   ev.preventDefault();
     let isCurrentAnswerCorrect = false;
+    
     if (isShowHint.value) {
         //處理 DOM
         currentClueCardEl.value.remove();
@@ -164,12 +149,12 @@ const handleClueCardMouseOff = (cardIndex, ev) => {
             resetTimelineEventsPosition();
             isGameEnd.value = true;
         }
-
-        handleUpdateTimelinePosition(gameStatus.currentStep);
+        
+        handleUpdateTimelinePosition();
 
         if (!isCurrentAnswerCorrect) {
             setTimeout(() => {
-                handleUpdateTimelineTargetPosition(gameStatus.currentStep);
+                handleUpdateTimelineTargetPosition();
                 isAnimation.value = true;
             }, 0);
         }
@@ -194,15 +179,9 @@ const handleClueCardTouchOff = async (cardIndex, ev) => {
         clues.value.splice(cardIndex, 1);
 
         isCurrentAnswerCorrect = handleScore();
+        gameStatus.currentStep += 1;
 
-        if (gameStatus.currentStep < gameStatus.totalStep) {
-            gameStatus.currentStep += 1;
-        } else {
-            resetTimelineEventsPosition();
-            isGameEnd.value = true;
-        }
-
-        handleUpdateTimelinePosition(gameStatus.currentStep);
+        handleUpdateTimelinePosition();
 
         if (!isCurrentAnswerCorrect) {
             setTimeout(() => {
@@ -210,6 +189,12 @@ const handleClueCardTouchOff = async (cardIndex, ev) => {
                 isAnimation.value = true;
             }, 0);
         }
+
+        if (gameStatus.currentStep === gameStatus.totalStep + 1) {   
+            resetTimelineEventsPosition();
+            isGameEnd.value = true;
+        }
+
     } else {
         setCurrentClueCardMove(0, 0);
         clueCardContainerEl.value.append(currentClueCardEl.value);
@@ -227,11 +212,11 @@ const handleScore = () => {
     let isCorrect = false;
     let insertPostion = overOutlineCount.value;
     if (insertPostion === 0) {
-        isCorrect = timelineEvents.value[insertPostion].year < timelineEvents.value[insertPostion + 1].year;
+        isCorrect = timelineEvents.value[insertPostion].year <= timelineEvents.value[insertPostion + 1].year;
     } else if (insertPostion === timelineEvents.value.length - 1) {
-        isCorrect = timelineEvents.value[insertPostion].year > timelineEvents.value[insertPostion - 1].year;
+        isCorrect = timelineEvents.value[insertPostion].year >= timelineEvents.value[insertPostion - 1].year;
     } else {
-        isCorrect = timelineEvents.value[insertPostion].year > timelineEvents.value[insertPostion - 1].year && timelineEvents.value[insertPostion].year < timelineEvents.value[insertPostion + 1].year;
+        isCorrect = timelineEvents.value[insertPostion].year >= timelineEvents.value[insertPostion - 1].year && timelineEvents.value[insertPostion].year <= timelineEvents.value[insertPostion + 1].year;
     }
 
     gameStatus.stepCorrect[gameStatus.currentStep - 1] = isCorrect;
@@ -364,27 +349,27 @@ const resetTimelineEventsPosition = () => {
     });
 };
 
-const handleUpdateTimelinePosition = (currentStep) => {
+const handleUpdateTimelinePosition = () => {
+    const totalCards = timelineEvents.value.length;
     // 更新 timelineEvents 的位置
-    const updateTimelineEventsPosition = (currentStep, timelineEvents, timelinePositions) => {
-        for (let i = 0; i < currentStep; i++) {
+    const updateTimelineEventsPosition = (totalCards, timelineEvents, timelinePositions) => {
+        for (let i = 0; i < totalCards; i++) {
             timelineEvents[i].transform = `translate(-50%, ${timelinePositions[i]?.y}px)`;
         }
     };
-
-    currentTimelinePosition.value = clueDefaultPosition[gameStatus.currentStep - 1];
-    switch (currentStep) {
+    currentTimelinePosition.value = clueDefaultPosition.value[totalCards - 1];
+    switch (totalCards) {
         case 1:
             timelineEventsStyleRaw.value[0].transform = 'translate(-50%, 160px)';
             break;
         case 2:
             hintPostionTop.value = '75px';
-            updateTimelineEventsPosition(currentStep, timelineEventsStyleRaw.value, currentTimelinePosition.value);
+            updateTimelineEventsPosition(totalCards, timelineEventsStyleRaw.value, currentTimelinePosition.value);
             break;
         default:
-            if (currentStep >= 3) {
+            if (totalCards >= 3) {
                 hintPostionTop.value = '75px';
-                updateTimelineEventsPosition(currentStep, timelineEventsStyleRaw.value, currentTimelinePosition.value);
+                updateTimelineEventsPosition(totalCards, timelineEventsStyleRaw.value, currentTimelinePosition.value);
             }
             break;
     }
@@ -417,7 +402,7 @@ const handleGameReset = () => {
     isGameEnd.value = false;
     isGameStart.value = false;
     Object.assign(gameStatus, JSON.parse(JSON.stringify(initialGameState)));
-    handleUpdateTimelinePosition(gameStatus.currentStep);
+    handleUpdateTimelinePosition();
 };
 
 
@@ -452,7 +437,7 @@ const gameInit = () => {
 
     clues.value = [...cluesData];
 
-    currentTimelinePosition.value = clueDefaultPosition[gameStatus.currentStep - 1];
+    currentTimelinePosition.value = clueDefaultPosition.value[gameStatus.currentStep - 1];
 };
 
 const boardHeight = computed(() => {
@@ -491,13 +476,13 @@ const timelineHieght = computed(() => {
       >
         <div class="mx-1 h-8 flex justify-center items-center relative">
           <div class="mr-2 text-sm font-Libre">
-            {{ gameStatus.currentStep }} / {{ gameStatus.totalStep }} 題
+            {{ gameStatus.currentStep - 1 }} / {{ gameStatus.totalStep }} 題
           </div>
           <ul class="flex items-center">
             <li
               v-for="(isCorrect, index) in gameStatus.stepCorrect"
               :key="index"
-              class="w-6 h-2.5 mr-[2px] border-2 rounded-full"
+              class="w-4 h-2.5 mr-[2px] border-2 rounded-full"
               :class="[
                 isCorrect === null ? 'bg-[#e3e0d5] border-[#e3e0d5]' : isCorrect ? 'bg-[#5cb887] border-[#5cb887]' : 'bg-[#d25353] border-[#d25353]',
                 gameStatus.currentStep === index + 1 ? 'border-[#5d72c9]' : '',

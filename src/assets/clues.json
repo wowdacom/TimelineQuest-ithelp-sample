@@ -78,5 +78,25 @@
     "step": 5,
     "offsetPath": "path('M 0 0 L 866.799 499.078')",
     "animationDelay": "4.625s"
+  },
+  {
+    "year": "2021",
+    "event": "GPT開始受到關注",
+    "description": "GPT在自然語言處理方面是重要突破，能生成近人類水平文本，廣泛應用於聊天機器人、自動寫作和數據分析。",
+    "image": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/2048px-ChatGPT_logo.svg.png",
+    "point": 4,
+    "step": 9,
+    "offsetPath": "path('M 0 0 L 500 700')",
+    "animationDelay": "6s"
+  },
+  {
+    "year": "2023",
+    "event": "2023 年首季平均每週遭攻擊逾 3,000 次",
+    "description": "Check Point報告指出，今年Q1全球攻擊次數年增7%，台灣則高達年增24%，每週遭受3,250次攻擊，居首位。",
+    "image": "https://blog.trendmicro.com.tw/wp-content/uploads/2017/12/Image20171109111927.jpg",
+    "point": 2,
+    "step": 10,
+    "offsetPath": "path('M 0 0 L -1200 300')",
+    "animationDelay": "7.375s"
   }
 ]
