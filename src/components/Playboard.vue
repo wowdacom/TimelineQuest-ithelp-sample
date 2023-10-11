@@ -121,31 +121,20 @@ const currentYear = new Date().getFullYear();
 const yearOptions = Array.from({ length: 100 }, (_, i) => currentYear - i);
 const selectedYear = ref(currentYear);
 
-const handleClueCardMouseDown = (cardIndex, ev) => {
-    if (isMobile()) {
-        return;
-    }
+const handleClueCardInteractionStart = (cardIndex, ev, isTouch = false) => {
     isShowTip.value = false;
     currentClueCardEl.value = clueCardEl.value[cardIndex];
     document.body.appendChild(currentClueCardEl.value);
-    setCurrentClueCardMove(ev.pageX, ev.pageY - currentClueCardEl.value.offsetHeight / 2);
+    const x = isTouch ? ev.touches[0]?.pageX : ev.pageX;
+    const y = isTouch ? ev.touches[0]?.pageY : ev.pageY;
+    setCurrentClueCardMove(x, y - currentClueCardEl.value.offsetHeight / 2);
 
-    document.addEventListener('mousemove', handleClueCardMove);
+    const moveEvent = isTouch ? 'touchmove' : 'mousemove';
+    document.addEventListener(moveEvent, handleClueCardMove);
 };
 
-const handleClueCardTouch = (cardIndex, ev) => {
-
+const handleClueCardInteractionEnd = (cardIndex, ev) => {
     ev.preventDefault();
-    isShowTip.value = false;
-    currentClueCardEl.value = clueCardEl.value[cardIndex];
-    document.body.append(currentClueCardEl.value);
-    setCurrentClueCardMove(ev.touches ? ev.touches[0]?.pageX : ev.pageX, (ev.touches ? ev.touches[0]?.pageY : ev.pageY) - currentClueCardEl.value.offsetHeight / 2);
-
-    document.addEventListener('touchmove', handleClueCardMove);
-};
-
-const handleClueCardMouseOff = (cardIndex, ev) => {
-  ev.preventDefault();
     let isCurrentAnswerCorrect = false;
     if (isShowHint.value) {
         //處理 DOM
@@ -181,43 +170,6 @@ const handleClueCardMouseOff = (cardIndex, ev) => {
     document.removeEventListener('mousemove', handleClueCardMove);
 };
 
-const handleClueCardTouchOff = async (cardIndex, ev) => {
-    ev.preventDefault();
-    let isCurrentAnswerCorrect = false;
-    if (isShowHint.value) {
-        //處理 DOM
-        currentClueCardEl.value.remove();
-        isShowHint.value = false;
-
-        //處理資料
-        timelineEvents.value.splice(overOutlineCount.value, 0, clues.value[cardIndex]);
-        clues.value.splice(cardIndex, 1);
-
-        isCurrentAnswerCorrect = handleScore();
-
-        if (gameStatus.currentStep < gameStatus.totalStep) {
-            gameStatus.currentStep += 1;
-        } else {
-            resetTimelineEventsPosition();
-            isGameEnd.value = true;
-        }
-
-        handleUpdateTimelinePosition(gameStatus.currentStep);
-
-        if (!isCurrentAnswerCorrect) {
-            setTimeout(() => {
-                handleUpdateTimelineTargetPosition(gameStatus.currentStep);
-                isAnimation.value = true;
-            }, 0);
-        }
-    } else {
-        setCurrentClueCardMove(0, 0);
-        clueCardContainerEl.value.append(currentClueCardEl.value);
-    }
-    handleTimelineContainerExtend(false);
-    document.removeEventListener('touchmove', handleClueCardMove);
-};
-
 const handleAnimationEnd = () => {
     isAnimation.value = false;
     handleSortedTimelineEvents();
@@ -237,7 +189,7 @@ const handleScore = () => {
     gameStatus.stepCorrect[gameStatus.currentStep - 1] = isCorrect;
     if (isCorrect) {
         gameStatus.scoreRecord[gameStatus.currentStep - 1] = timelineEvents.value[insertPostion].point;
-        gameStatus.score = getTotalScore()
+        gameStatus.score = getTotalScore();
     }
 
     //標記 timelineEvents 是否回答正確
@@ -420,8 +372,6 @@ const handleGameReset = () => {
     handleUpdateTimelinePosition(gameStatus.currentStep);
 };
 
-
-
 const gameComment = (score) => {
     let comment = '';
 
@@ -466,232 +416,150 @@ const timelineHieght = computed(() => {
         height: gameStatus.currentStep > 5 ? (gameStatus.currentStep - 5) * 50 + 480 + 'px' : '480px',
     };
 });
-
 </script>
 
 <template>
-  <div
-    v-for="clue in cluesData"
-    v-show="!isGameStart"
-    :key="clue.year"
-    class="animate-[radiation_11s_infinite_forwards] absolute text-[#d8d5ca] text-6xl font-black rotate-0 "
-    :style="{ 'offset-path': clue.offsetPath, 'animation-delay': clue.animationDelay, 'offset-rotate': '0deg' }"
-  >
-    {{ clue.year }}
-  </div>
-  <div
-    :style="boardHeight"
-    class="w-[375px]"
-    :class="isGameStart ? 'border border-light-400 rounded-md' : ''"
-  >
-    <div class="w-full h-full flex justify-center items-center">
-      <div
-        v-if="isGameStart"
-        class="w-full h-full relative"
-      >
-        <div class="mx-1 h-8 flex justify-center items-center relative">
-          <div class="mr-2 text-sm font-Libre">
-            {{ gameStatus.currentStep }} / {{ gameStatus.totalStep }} 題
-          </div>
-          <ul class="flex items-center">
-            <li
-              v-for="(isCorrect, index) in gameStatus.stepCorrect"
-              :key="index"
-              class="w-6 h-2.5 mr-[2px] border-2 rounded-full"
-              :class="[
-                isCorrect === null ? 'bg-[#e3e0d5] border-[#e3e0d5]' : isCorrect ? 'bg-[#5cb887] border-[#5cb887]' : 'bg-[#d25353] border-[#d25353]',
-                gameStatus.currentStep === index + 1 ? 'border-[#5d72c9]' : '',
-              ]"
-            />
-          </ul>
-          <div
-            data-test="score"
-            class="ml-2 text-sm font-Libre"
-          >
-            {{ gameStatus.score }} 分
-          </div>
-          <RuleDeclaration class="z-50 ml-2" />
-        </div>
-        <div
-          v-if="!isGameEnd"
-          ref="clueCardContainerEl"
-          class="absolute h-[145px] left-1/2 top-8 z-10"
-        >
-          <div
-            v-for="(clue, index) in clues"
-            v-show="clue.step === gameStatus.currentStep"
-            ref="clueCardEl"
-            :key="clue"
-            :data-test="clue.step === gameStatus.currentStep ? 'clue-card' : 'clue-card-hidden'"
-            class="cursor-grabbing absolute top-0 left-1/2 -translate-x-1/2 flex items-center w-[360px] px-2 py-3 border rounded-lg mx-auto bg-white shadow-bottom"
-            :class="isShowTip ? 'animate-[wiggleCard_5s_infinite_forwards]' : ''"
-            @mousedown.stop="handleClueCardMouseDown(index, $event)"
-            @mouseup.stop="handleClueCardMouseOff(index, $event)"
-            @touchstart.stop="handleClueCardTouch(index, $event)"
-            @touchend.stop="handleClueCardTouchOff(index, $event)"
-            @dragstart="() => false"
-          >
-            <img
-              class="w-[100px] h-[100px] mr-2 shrink-0 object-contain bg-white"
-              :src="clue.image"
-              alt=""
-            >
-            <p class="text-sm font-bold">
-              {{ clue.description }}
-            </p>
-            <div class="absolute right-2 bottom-2 font-Libre text-[#b1aea4] text-sm">
-              {{ clue.point }} 分
-            </div>
-          </div>
-          <div
-            v-if="isShowTip"
-            class="absolute bottom-10 left-10 translate-x-1/2 translate-y-10"
-          >
-            <i-carbon-touch-1-filled class="animate-[wiggle_5s_infinite_forwards] text-4xl text-yellow-400" />
-            <div class="absolute w-60 -bottom-10 -left-20 -rotate-3 font-bold">
-              將線索拖曳到時間軌跡上！
-            </div>
-          </div>
-        </div>
-        <div
-          v-else
-          class="absolute h-[145px] w-full top-8 z-10 flex flex-col p-4 bg-gray-500 text-white rounded-lg"
-        >
-          <div class="text-2xl font-bold">
-            遊戲結束
-          </div>
-          <div class="mt-1">
-            {{ gameComment(gameStatus.score) }}
-          </div>
-          <div class="mt-1">
-            你共答對
-            {{ gameStatus.stepCorrect.filter((item) => item).length }} 題 / 得分 {{ gameStatus.score }} 分
-          </div>
-
-          <i-majesticons-lightbulb-shine class="absolute top-4 right-10 rotate-180 text-yellow-300 text-4xl" />
-          <div class="absolute right-0 bottom-0 text-white flex p-3 text-3xl items-center">
-            <i-solar-restart-square-bold
-              class="mr-3"
-              @click="handleGameReset"
-            />
-            <a
-              target="_blank"
-              href="https://social-plugins.line.me/lineit/share?url=https://wowdacom.github.io/TimelineQuest-ithelp-sample/"
-            >
-              <i-ph-share-fill
-                class="mr-3"
-                @click="handleLineShare"
-              /></a>
-          </div>
-        </div>
-
-        <div
-          ref="timelineContainerEl"
-          class="absolute bottom-0 left-1/2 -translate-x-1/2 h-full w-full px-4"
-        >
-          <div
-            :style="{ paddingTop: timelineContainerTop }"
-            class="transition-all duration-700 relative h-full flex flex-col items-center z-0"
-          >
-            <div class="text-[#b1aea4]">
-              BEFORE
-            </div>
-            <div class="w-0.5 h-full bg-white" />
-            <div class="text-[#b1aea4] mb-4">
-              AFTER
-            </div>
-          </div>
-
-          <div
-            ref="timelineEl"
-            data-test="timeline"
-            :style="timelineHieght"
-            class="absolute w-full bottom-0 left-1/2 -translate-x-1/2"
-          >
-            <div
-              v-show="isShowHint"
-              ref="hintEl"
-              :style="{ top: hintPostionTop }"
-              class="w-[360px] h-[120px] bg-[#f9d988] rounded-lg absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
-            />
-            <div
-              v-for="(timelineEvent, index) in timelineEvents"
-              ref="timelineEventsEl"
-              :key="timelineEvent.year"
-              class="mx-auto absolute top-0 left-1/2 w-[350px] bg-[#e3e0d5] rounded-lg py-[12px] px-[10px] flex items-center border-t-4 border-t-[#f2f1e7]"
-              :class="isAnimation ? 'transition-transform duration-500' : ''"
-              :style="isAnimation ? timelineEventsStyleRawAnimationTarget[index] : timelineEventsStyleRaw[index]"
-              @transitionend="handleAnimationEnd"
-            >
-              <div class="absolute left-1/2 top-0 -translate-x-1/2 translate-y-[-18px] bg-[#f2f1e7] rounded-t-full text-base px-3.5 z-3 text-[#f2f1e7] h-4">
-                {{ timelineEvent.year }}
-                <!-- 我是橢圓形的邊框 -->
-              </div>
-              <div
-                :class="
-                  timelineEvent.isCorrect === undefined
-                    ? 'bg-[#b6b3a4] border-[#e3e0d5]'
-                    : timelineEvent.isCorrect
-                      ? 'bg-[#5cb887] border-[#5cb887]'
-                      : 'bg-[#d25353] border-[#d25353]'
-                "
-                :data-test="timelineEvent.isCorrect === undefined ? 'default' : timelineEvent.isCorrect ? 'timeline-event-year-correct' : 'timeline-event-year-wrong'"
-                class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full text-base px-2 py-0.5 text-white font-Libre"
-              >
-                {{ timelineEvent.year }}
-              </div>
-              <img
-                class="w-[65px] h-[65px] shrink-0 object-contain bg-white"
-                :src="timelineEvent.image"
-                alt=""
-              >
-              <p class="px-2 text-sm text-[#5b5338] font-extrabold line-clamp-3">
-                {{ timelineEvent.description }}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div
-        v-else
-        class="w-[350px] h-[350px] rounded-2xl border-2 flex flex-col justify-center items-center relative bg-white shadow-md"
-      >
-        <RuleDeclaration class=" absolute top-2 right-2" />
-        <i-clarity-beta-solid class="text-5xl text-[#5D72C8] opacity-30" />
-        <h1
-          data-test="title"
-          class="text-4xl font-extrabold mb-3"
-        >
-          時間線任務
-        </h1>
-        <h4 class="mb-5 text-[#b1aea4]">
-          2023年9月1日
-        </h4>
-        <h2 class="mb-2 text-center">
-          你能把八個重要事件<br>按自己出生前後順序排列嗎？
-        </h2>
-        <div class="mb-2 flex">
-          <h1>選擇出生年份</h1>
-          <select v-model="selectedYear">
-            <option
-              v-for="year in yearOptions"
-              :key="year"
-              :value="year"
-            >
-              {{ year }}
-            </option>
-          </select>
-        </div>
-        <button
-          data-test="game-start-btn"
-          class="rounded-full border w-[150px] h-[40px] bg-[#5d72c9] text-white"
-          @click="handleGameStart"
-        >
-          開始遊戲 <i-maki-arrow class="inline-block" />
-        </button>
-      </div>
+    <div
+        v-for="clue in cluesData"
+        v-show="!isGameStart"
+        :key="clue.year"
+        class="animate-[radiation_11s_infinite_forwards] absolute text-[#d8d5ca] text-6xl font-black rotate-0"
+        :style="{ 'offset-path': clue.offsetPath, 'animation-delay': clue.animationDelay, 'offset-rotate': '0deg' }"
+    >
+        {{ clue.year }}
     </div>
-  </div>
+    <div :style="boardHeight" class="w-[375px]" :class="isGameStart ? 'border border-light-400 rounded-md' : ''">
+        <div class="w-full h-full flex justify-center items-center">
+            <div v-if="isGameStart" class="w-full h-full relative">
+                <div class="mx-1 h-8 flex justify-center items-center relative">
+                    <div class="mr-2 text-sm font-Libre">{{ gameStatus.currentStep }} / {{ gameStatus.totalStep }} 題</div>
+                    <ul class="flex items-center">
+                        <li
+                            v-for="(isCorrect, index) in gameStatus.stepCorrect"
+                            :key="index"
+                            class="w-6 h-2.5 mr-[2px] border-2 rounded-full"
+                            :class="[
+                                isCorrect === null ? 'bg-[#e3e0d5] border-[#e3e0d5]' : isCorrect ? 'bg-[#5cb887] border-[#5cb887]' : 'bg-[#d25353] border-[#d25353]',
+                                gameStatus.currentStep === index + 1 ? 'border-[#5d72c9]' : '',
+                            ]"
+                        />
+                    </ul>
+                    <div data-test="score" class="ml-2 text-sm font-Libre">{{ gameStatus.score }} 分</div>
+                    <RuleDeclaration class="z-50 ml-2" />
+                </div>
+                <div v-if="!isGameEnd" ref="clueCardContainerEl" class="absolute h-[145px] left-1/2 top-8 z-10">
+                    <div
+                        v-for="(clue, index) in clues"
+                        v-show="clue.step === gameStatus.currentStep"
+                        ref="clueCardEl"
+                        :key="clue"
+                        :data-test="clue.step === gameStatus.currentStep ? 'clue-card' : 'clue-card-hidden'"
+                        class="cursor-grabbing absolute top-0 left-1/2 -translate-x-1/2 flex items-center w-[360px] px-2 py-3 border rounded-lg mx-auto bg-white shadow-bottom"
+                        :class="isShowTip ? 'animate-[wiggleCard_5s_infinite_forwards]' : ''"
+                        @mousedown.stop="handleClueCardInteractionStart(index, $event, false)"
+                        @touchstart.stop="handleClueCardInteractionStart(index, $event, true)"
+                        @mouseup.stop="handleClueCardInteractionEnd(index, $event)"
+                        @touchend.stop="handleClueCardInteractionEnd(index, $event)"
+                        @dragstart="() => false"
+                    >
+                        <img class="w-[100px] h-[100px] mr-2 shrink-0 object-contain bg-white" :src="clue.image" alt="" />
+                        <p class="text-sm font-bold">
+                            {{ clue.description }}
+                        </p>
+                        <div class="absolute right-2 bottom-2 font-Libre text-[#b1aea4] text-sm">{{ clue.point }} 分</div>
+                    </div>
+                    <div v-if="isShowTip" class="absolute bottom-10 left-10 translate-x-1/2 translate-y-10">
+                        <i-carbon-touch-1-filled class="animate-[wiggle_5s_infinite_forwards] text-4xl text-yellow-400" />
+                        <div class="absolute w-60 -bottom-10 -left-20 -rotate-3 font-bold">將線索拖曳到時間軌跡上！</div>
+                    </div>
+                </div>
+                <div v-else class="absolute h-[145px] w-full top-8 z-10 flex flex-col p-4 bg-gray-500 text-white rounded-lg">
+                    <div class="text-2xl font-bold">遊戲結束</div>
+                    <div class="mt-1">
+                        {{ gameComment(gameStatus.score) }}
+                    </div>
+                    <div class="mt-1">
+                        你共答對
+                        {{ gameStatus.stepCorrect.filter((item) => item).length }} 題 / 得分 {{ gameStatus.score }} 分
+                    </div>
+
+                    <i-majesticons-lightbulb-shine class="absolute top-4 right-10 rotate-180 text-yellow-300 text-4xl" />
+                    <div class="absolute right-0 bottom-0 text-white flex p-3 text-3xl items-center">
+                        <i-solar-restart-square-bold class="mr-3" @click="handleGameReset" />
+                        <a target="_blank" href="https://social-plugins.line.me/lineit/share?url=https://wowdacom.github.io/TimelineQuest-ithelp-sample/">
+                            <i-ph-share-fill class="mr-3" @click="handleLineShare"
+                        /></a>
+                    </div>
+                </div>
+
+                <div ref="timelineContainerEl" class="absolute bottom-0 left-1/2 -translate-x-1/2 h-full w-full px-4">
+                    <div :style="{ paddingTop: timelineContainerTop }" class="transition-all duration-700 relative h-full flex flex-col items-center z-0">
+                        <div class="text-[#b1aea4]">BEFORE</div>
+                        <div class="w-0.5 h-full bg-white" />
+                        <div class="text-[#b1aea4] mb-4">AFTER</div>
+                    </div>
+
+                    <div ref="timelineEl" data-test="timeline" :style="timelineHieght" class="absolute w-full bottom-0 left-1/2 -translate-x-1/2">
+                        <div
+                            v-show="isShowHint"
+                            ref="hintEl"
+                            :style="{ top: hintPostionTop }"
+                            class="w-[360px] h-[120px] bg-[#f9d988] rounded-lg absolute left-1/2 -translate-x-1/2 -translate-y-1/2"
+                        />
+                        <div
+                            v-for="(timelineEvent, index) in timelineEvents"
+                            ref="timelineEventsEl"
+                            :key="timelineEvent.year"
+                            class="mx-auto absolute top-0 left-1/2 w-[350px] bg-[#e3e0d5] rounded-lg py-[12px] px-[10px] flex items-center border-t-4 border-t-[#f2f1e7]"
+                            :class="isAnimation ? 'transition-transform duration-500' : ''"
+                            :style="isAnimation ? timelineEventsStyleRawAnimationTarget[index] : timelineEventsStyleRaw[index]"
+                            @transitionend="handleAnimationEnd"
+                        >
+                            <div class="absolute left-1/2 top-0 -translate-x-1/2 translate-y-[-18px] bg-[#f2f1e7] rounded-t-full text-base px-3.5 z-3 text-[#f2f1e7] h-4">
+                                {{ timelineEvent.year }}
+                                <!-- 我是橢圓形的邊框 -->
+                            </div>
+                            <div
+                                :class="
+                                    timelineEvent.isCorrect === undefined
+                                        ? 'bg-[#b6b3a4] border-[#e3e0d5]'
+                                        : timelineEvent.isCorrect
+                                        ? 'bg-[#5cb887] border-[#5cb887]'
+                                        : 'bg-[#d25353] border-[#d25353]'
+                                "
+                                :data-test="timelineEvent.isCorrect === undefined ? 'default' : timelineEvent.isCorrect ? 'timeline-event-year-correct' : 'timeline-event-year-wrong'"
+                                class="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full text-base px-2 py-0.5 text-white font-Libre"
+                            >
+                                {{ timelineEvent.year }}
+                            </div>
+                            <img class="w-[65px] h-[65px] shrink-0 object-contain bg-white" :src="timelineEvent.image" alt="" />
+                            <p class="px-2 text-sm text-[#5b5338] font-extrabold line-clamp-3">
+                                {{ timelineEvent.description }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div v-else class="w-[350px] h-[350px] rounded-2xl border-2 flex flex-col justify-center items-center relative bg-white shadow-md">
+                <RuleDeclaration class="absolute top-2 right-2" />
+                <i-clarity-beta-solid class="text-5xl text-[#5D72C8] opacity-30" />
+                <h1 data-test="title" class="text-4xl font-extrabold mb-3">時間線任務</h1>
+                <h4 class="mb-5 text-[#b1aea4]">2023年9月1日</h4>
+                <h2 class="mb-2 text-center">你能把八個重要事件<br />按自己出生前後順序排列嗎？</h2>
+                <div class="mb-2 flex">
+                    <h1>選擇出生年份</h1>
+                    <select v-model="selectedYear">
+                        <option v-for="year in yearOptions" :key="year" :value="year">
+                            {{ year }}
+                        </option>
+                    </select>
+                </div>
+                <button data-test="game-start-btn" class="rounded-full border w-[150px] h-[40px] bg-[#5d72c9] text-white" @click="handleGameStart">
+                    開始遊戲 <i-maki-arrow class="inline-block" />
+                </button>
+            </div>
+        </div>
+    </div>
 </template>
 <style scoped>
 @import url('https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@700&display=swap');
