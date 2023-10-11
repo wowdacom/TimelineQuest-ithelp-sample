@@ -70,36 +70,6 @@ const currentTimelinePosition = ref([
     },
 ]);
 
-const timelineEventsStyleRaw = ref([
-    {
-        transform: 'translate(-50%, 150px)',
-    },
-    {
-        transform: 'translate(-50%, 150px)',
-    },
-    {
-        transform: 'translate(-50%, 150px)',
-    },
-    {
-        transform: 'translate(-50%, 150px)',
-    },
-    {
-        transform: 'translate(-50%, 150px)',
-    },
-    {
-        transform: 'translate(-50%, 150px)',
-    },
-    {
-        transform: 'translate(-50%, 150px)',
-    },
-    {
-        transform: 'translate(-50%, 150px)',
-    },
-    {
-        transform: 'translate(-50%, 150px)',
-    },
-]);
-
 const timelineEventsStyleRawAnimationTarget = ref([
     { transform: 'translate(-50%, 150px)', zIndex: 1 },
     { transform: 'translate(-50%, 150px)', zIndex: 2 },
@@ -171,6 +141,7 @@ const handleClueCardInteractionEnd = (cardIndex, ev) => {
 };
 
 const handleAnimationEnd = () => {
+    console.log('handleAnimationEnd');
     isAnimation.value = false;
     handleSortedTimelineEvents();
 };
@@ -204,6 +175,8 @@ const getTotalScore = () => {
 
 const handleSortedTimelineEvents = () => {
     timelineEvents.value.sort((a, b) => a.year - b.year);
+    handleUpdateTimelinePosition(gameStatus.currentStep);
+    console.log(timelineEvents.value);
 };
 
 const handleClueCardMove = (ev) => {
@@ -301,42 +274,42 @@ const handleTimelineContainerExtend = (isExtend) => {
 };
 
 const calcTimelineEventsCurrentStyles = (hintHeight, timelineEventMarginTop) => {
-    timelineEventsStyleRaw.value.forEach((element, index) => {
+    timelineEvents.value.forEach((element, index) => {
         if (index < overOutlineCount.value) {
-            timelineEventsStyleRaw.value[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y - (hintHeight + timelineEventMarginTop)}px)`;
+            timelineEvents.value[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y - (hintHeight + timelineEventMarginTop)}px)`;
         } else {
-            timelineEventsStyleRaw.value[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y}px)`;
+            timelineEvents.value[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y}px)`;
         }
     });
 };
 
 const resetTimelineEventsPosition = () => {
-    timelineEventsStyleRaw.value.forEach((element, index) => {
-        timelineEventsStyleRaw.value[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y}px)`;
+    timelineEvents.value.forEach((element, index) => {
+        timelineEvents.value[index].transform = 'translate(-50%, 150px)';
     });
 };
 
 const handleUpdateTimelinePosition = (currentStep) => {
     // 更新 timelineEvents 的位置
-    const updateTimelineEventsPosition = (currentStep, timelineEvents, timelinePositions) => {
+    const updateTimelineEventsPosition = (currentStep, timelinePositions) => {
         for (let i = 0; i < currentStep; i++) {
-            timelineEvents[i].transform = `translate(-50%, ${timelinePositions[i]?.y}px)`;
+            timelineEvents.value[i].transform = `translate(-50%, ${timelinePositions[i]?.y}px)`;
         }
     };
 
     currentTimelinePosition.value = clueDefaultPosition[gameStatus.currentStep - 1];
     switch (currentStep) {
         case 1:
-            timelineEventsStyleRaw.value[0].transform = 'translate(-50%, 160px)';
+            timelineEvents.value[0].transform = 'translate(-50%, 160px)';
             break;
         case 2:
             hintPostionTop.value = '75px';
-            updateTimelineEventsPosition(currentStep, timelineEventsStyleRaw.value, currentTimelinePosition.value);
+            updateTimelineEventsPosition(currentStep, currentTimelinePosition.value);
             break;
         default:
             if (currentStep >= 3) {
                 hintPostionTop.value = '75px';
-                updateTimelineEventsPosition(currentStep, timelineEventsStyleRaw.value, currentTimelinePosition.value);
+                updateTimelineEventsPosition(currentStep, currentTimelinePosition.value);
             }
             break;
     }
@@ -347,7 +320,7 @@ const handleUpdateTimelineTargetPosition = () => {
         ...timelineEvents.value.map((timelineEvent, index) => {
             return {
                 ...timelineEvent,
-                transform: timelineEventsStyleRaw.value[index].transform,
+                transform: timelineEvents.value[index].transform,
                 zIndex: index + 10,
             };
         }),
@@ -391,14 +364,14 @@ const gameComment = (score) => {
 const gameInit = () => {
     timelineEvents.value = [];
     timelineEvents.value.push({
-        year: selectedYear.value,
+        year: `${selectedYear.value}`,
         event: '一個孩子誕生囉!',
         description: '慶祝生命的多彩多姿，每一刻都值得紀念和珍惜。',
         image: 'https://i.imgur.com/xTWeFPu.jpg',
-        translateY: '300px',
         point: 0,
         step: 0,
     });
+    handleUpdateTimelinePosition(gameStatus.currentStep);
 
     clues.value = [...cluesData];
 
@@ -512,7 +485,7 @@ const timelineHieght = computed(() => {
                             :key="timelineEvent.year"
                             class="mx-auto absolute top-0 left-1/2 w-[350px] bg-[#e3e0d5] rounded-lg py-[12px] px-[10px] flex items-center border-t-4 border-t-[#f2f1e7]"
                             :class="isAnimation ? 'transition-transform duration-500' : ''"
-                            :style="isAnimation ? timelineEventsStyleRawAnimationTarget[index] : timelineEventsStyleRaw[index]"
+                            :style="isAnimation ? timelineEventsStyleRawAnimationTarget[index] : { transform: timelineEvent.transform }"
                             @transitionend="handleAnimationEnd"
                         >
                             <div class="absolute left-1/2 top-0 -translate-x-1/2 translate-y-[-18px] bg-[#f2f1e7] rounded-t-full text-base px-3.5 z-3 text-[#f2f1e7] h-4">
@@ -534,6 +507,7 @@ const timelineHieght = computed(() => {
                             </div>
                             <img class="w-[65px] h-[65px] shrink-0 object-contain bg-white" :src="timelineEvent.image" alt="" />
                             <p class="px-2 text-sm text-[#5b5338] font-extrabold line-clamp-3">
+                                {{ timelineEvent.transform }}
                                 {{ timelineEvent.description }}
                             </p>
                         </div>
