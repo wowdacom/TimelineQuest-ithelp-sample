@@ -7,9 +7,9 @@ import clueDefaultPosition from '../assets/clues_position.json';
 const isGameStart = ref(false);
 const isGameEnd = ref(false);
 const isShowTip = ref(false);
-
 const isShowHint = ref(false);
 const isAnimation = ref(false);
+const isPlayed = ref(false);
 
 const timelineEvents = ref([]);
 const clues = ref([]);
@@ -271,10 +271,33 @@ const handleUpdateTimelineTargetPosition = () => {
     });
 };
 
-const handleGameStart = () => {
+const handleGameStart = (isRestart) => {
+    if (!isRestart) {
+        isShowTip.value = true;
+    }
     isGameStart.value = true;
-    isShowTip.value = true;
-    gameInit();
+    clues.value = [...cluesData];
+    timelineEvents.value = [];
+    timelineEvents.value.push({
+        year: `${selectedYear.value}`,
+        event: '一個孩子誕生囉!',
+        description: '慶祝生命的多彩多姿，每一刻都值得紀念和珍惜。',
+        image: 'https://i.imgur.com/xTWeFPu.jpg',
+        point: 0,
+        step: 0,
+    });
+    handleUpdateTimelinePosition(gameStatus.currentStep);
+};
+
+const handleGameKeep = () => {
+    const savedGameStatus = loadGameStatus();
+    isGameStart.value = true;
+    isShowTip.value = false;
+    Object.assign(gameStatus, savedGameStatus);
+    clues.value = savedGameStatus.clues;
+    timelineEvents.value = savedGameStatus.timelineEvents;
+    selectedYear.value = savedGameStatus.selectedYear;
+    handleUpdateTimelinePosition(gameStatus.currentStep);
 };
 
 const handleGameReset = () => {
@@ -282,6 +305,8 @@ const handleGameReset = () => {
     isGameStart.value = false;
     Object.assign(gameStatus, JSON.parse(JSON.stringify(initialGameState)));
     handleUpdateTimelinePosition(gameStatus.currentStep);
+    isPlayed.value = false;
+    localStorage.removeItem('gameStatus');
 };
 
 const gameComment = (score) => {
@@ -301,17 +326,20 @@ const gameComment = (score) => {
 };
 
 const gameInit = () => {
-    clues.value = [...cluesData];
-    timelineEvents.value = [];
-    timelineEvents.value.push({
-        year: `${selectedYear.value}`,
-        event: '一個孩子誕生囉!',
-        description: '慶祝生命的多彩多姿，每一刻都值得紀念和珍惜。',
-        image: 'https://i.imgur.com/xTWeFPu.jpg',
-        point: 0,
-        step: 0,
-    });
-    handleUpdateTimelinePosition(gameStatus.currentStep);
+    const savedGameStatus = loadGameStatus();
+    if (savedGameStatus) {
+        isPlayed.value = true;
+    } else {
+        isPlayed.value = false;
+    }
+};
+
+const loadGameStatus = () => {
+    const savedGameStatus = JSON.parse(localStorage.getItem('gameStatus'));
+    if (savedGameStatus) {
+        return savedGameStatus;
+    }
+    return null;
 };
 
 const boardHeight = computed(() => {
@@ -325,6 +353,28 @@ const timelineHieght = computed(() => {
         height: gameStatus.currentStep > 5 ? (gameStatus.currentStep - 5) * 50 + 480 + 'px' : '480px',
     };
 });
+
+const saveGameStatus = () => {
+    if (gameStatus.currentStep > 1 && gameStatus.currentStep < 9) {
+        localStorage.setItem(
+            'gameStatus',
+            JSON.stringify({
+                ...gameStatus,
+                clues: clues.value,
+                timelineEvents: timelineEvents.value,
+                selectedYear: selectedYear.value,
+            }),
+        );
+    } else {
+        localStorage.removeItem('gameStatus');
+    }
+
+    return null;
+};
+
+window.addEventListener('beforeunload', saveGameStatus);
+
+gameInit();
 </script>
 
 <template>
@@ -398,7 +448,7 @@ const timelineHieght = computed(() => {
                     </div>
 
                     <i-majesticons-lightbulb-shine class="absolute top-4 right-10 rotate-180 text-yellow-300 text-4xl" />
-                    <div class="absolute right-0 bottom-0 text-white flex p-3 text-3xl items-center">
+                    <div class="cursor-pointer absolute right-0 bottom-0 text-white flex p-3 text-3xl items-center">
                         <i-solar-restart-square-bold class="mr-3" @click="handleGameReset" />
                         <a target="_blank" href="https://social-plugins.line.me/lineit/share?url=https://wowdacom.github.io/TimelineQuest-ithelp-sample/"> <i-ph-share-fill class="mr-3" /></a>
                     </div>
@@ -458,17 +508,33 @@ const timelineHieght = computed(() => {
                 <h1 data-test="title" class="text-4xl font-extrabold mb-3">時間線任務</h1>
                 <h4 class="mb-5 text-[#b1aea4]">2023年9月1日</h4>
                 <h2 class="mb-2 text-center">你能把八個重要事件<br />按自己出生前後順序排列嗎？</h2>
-                <div class="mb-2 flex">
-                    <h1>選擇出生年份</h1>
-                    <select v-model="selectedYear">
-                        <option v-for="year in yearOptions" :key="year" :value="year">
-                            {{ year }}
-                        </option>
-                    </select>
+
+                <div v-if="isPlayed">
+                    <div class="text-center font-extrabold m-1 text-[#5d72c9]">
+                        <span class="">{{ selectedYear }} </span>那年出生的你，選擇要…
+                    </div>
+                    <div class="flex">
+                        <button data-test="game-start-btn" class="rounded-full border w-[130px] h-[40px] bg-[#5d72c9] text-white flex justify-center items-center" @click="handleGameStart(true)">
+                            重新開始 <i-solar-restart-square-bold class="ml-1 inline-block" />
+                        </button>
+                        <button data-test="game-start-btn" class="rounded-full border w-[130px] h-[40px] bg-[#5d72c9] text-white flex justify-center items-center" @click="handleGameKeep">
+                            繼續遊戲 <i-maki-arrow class="ml-1 inline-block" />
+                        </button>
+                    </div>
                 </div>
-                <button data-test="game-start-btn" class="rounded-full border w-[150px] h-[40px] bg-[#5d72c9] text-white" @click="handleGameStart">
-                    開始遊戲 <i-maki-arrow class="inline-block" />
-                </button>
+                <div v-else>
+                    <div class="mb-2 flex">
+                        <h1>選擇出生年份</h1>
+                        <select v-model="selectedYear" class="text-[#5d72c9] font-extrabold">
+                            <option v-for="year in yearOptions" :key="year" :value="year">
+                                {{ year }}
+                            </option>
+                        </select>
+                    </div>
+                    <button data-test="game-start-btn" class="rounded-full border w-[150px] h-[40px] bg-[#5d72c9] text-white" @click="handleGameStart(false)">
+                        開始遊戲 <i-maki-arrow class="inline-block" />
+                    </button>
+                </div>
             </div>
         </div>
     </div>
