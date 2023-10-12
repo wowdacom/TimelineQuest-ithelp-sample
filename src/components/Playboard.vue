@@ -55,6 +55,7 @@ const yearOptions = Array.from({ length: 100 }, (_, i) => currentYear - i);
 const selectedYear = ref(currentYear);
 
 const handleClueCardInteractionStart = (cardIndex, ev, isTouch = false) => {
+    ev.preventDefault();
     isShowTip.value = false;
     currentClueCardEl.value = clueCardEl.value[cardIndex];
     document.body.appendChild(currentClueCardEl.value);
