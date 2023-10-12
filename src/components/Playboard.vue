@@ -283,7 +283,7 @@ const handleGameStart = (isRestart) => {
         year: `${selectedYear.value}`,
         event: '一個孩子誕生囉!',
         description: '慶祝生命的多彩多姿，每一刻都值得紀念和珍惜。',
-        image: 'https://i.imgur.com/xTWeFPu.jpg',
+        image: 'https://i.imgur.com/j8skvh5.jpg',
         point: 0,
         step: 0,
     });
