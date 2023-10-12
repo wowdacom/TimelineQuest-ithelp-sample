@@ -31,44 +31,7 @@ const hintEl = ref(null);
 const timelineEl = ref(null);
 const timelineEventsEl = ref([]);
 
-const currentTimelinePosition = ref([
-    {
-        x: '50%',
-        y: 40,
-    },
-    {
-        x: '50%',
-        y: 100,
-    },
-    {
-        x: '50%',
-        y: 160,
-    },
-    {
-        x: '50%',
-        y: 220,
-    },
-    {
-        x: '50%',
-        y: 280,
-    },
-    {
-        x: '50%',
-        y: 340,
-    },
-    {
-        x: '50%',
-        y: 400,
-    },
-    {
-        x: '50%',
-        y: 460,
-    },
-    {
-        x: '50%',
-        y: 520,
-    },
-]);
+const currentTimelinePosition = ref([]);
 
 const timelineEventsStyleRawAnimationTarget = ref([
     { transform: 'translate(-50%, 150px)', zIndex: 1 },
@@ -116,13 +79,7 @@ const handleClueCardInteractionEnd = (cardIndex, ev) => {
         clues.value.splice(cardIndex, 1);
 
         isCurrentAnswerCorrect = handleScore();
-
-        if (gameStatus.currentStep < gameStatus.totalStep) {
-            gameStatus.currentStep += 1;
-        } else {
-            resetTimelineEventsPosition();
-            isGameEnd.value = true;
-        }
+        gameStatus.currentStep += 1;
 
         handleUpdateTimelinePosition(gameStatus.currentStep);
 
@@ -131,6 +88,10 @@ const handleClueCardInteractionEnd = (cardIndex, ev) => {
                 handleUpdateTimelineTargetPosition(gameStatus.currentStep);
                 isAnimation.value = true;
             }, 0);
+        }
+
+        if (gameStatus.currentStep === gameStatus.totalStep + 1) {
+            isGameEnd.value = true;
         }
     } else {
         setCurrentClueCardMove(0, 0);
@@ -141,7 +102,6 @@ const handleClueCardInteractionEnd = (cardIndex, ev) => {
 };
 
 const handleAnimationEnd = () => {
-    console.log('handleAnimationEnd');
     isAnimation.value = false;
     handleSortedTimelineEvents();
 };
@@ -176,7 +136,6 @@ const getTotalScore = () => {
 const handleSortedTimelineEvents = () => {
     timelineEvents.value.sort((a, b) => a.year - b.year);
     handleUpdateTimelinePosition(gameStatus.currentStep);
-    console.log(timelineEvents.value);
 };
 
 const handleClueCardMove = (ev) => {
@@ -225,7 +184,7 @@ const handleAnswerProcess = () => {
     if (gameStatus.currentStep === 2) {
         //計算每張 timelineEvent 的中心線，如果超過就移動 hint
 
-        calcTimelineEventsCurrentStyles(hintHeight, timelineEventMarginTop);
+        handleCardMoveAsAnswer(hintHeight, timelineEventMarginTop);
         hintPostionTop.value = `${hintDefaultTop + overOutlineCount.value * (timelineEventHeight + timelineEventMarginTop)}px`;
     }
 
@@ -233,7 +192,7 @@ const handleAnswerProcess = () => {
         //計算每張 timelineEvent 的中心線，如果超過就移動 hint
         hintDefaultTop = -40;
 
-        calcTimelineEventsCurrentStyles(hintHeight, timelineEventMarginTop);
+        handleCardMoveAsAnswer(hintHeight, timelineEventMarginTop);
         if (overOutlineCount.value === 0) {
             hintPostionTop.value = `${hintDefaultTop}px`;
         } else {
@@ -244,7 +203,7 @@ const handleAnswerProcess = () => {
     if (gameStatus.currentStep > 3) {
         hintDefaultTop = -40;
 
-        calcTimelineEventsCurrentStyles(hintHeight, timelineEventMarginTop);
+        handleCardMoveAsAnswer(hintHeight, timelineEventMarginTop);
         if (overOutlineCount.value === 0) {
             hintPostionTop.value = `${hintDefaultTop}px`;
         } else {
@@ -273,7 +232,7 @@ const handleTimelineContainerExtend = (isExtend) => {
     }
 };
 
-const calcTimelineEventsCurrentStyles = (hintHeight, timelineEventMarginTop) => {
+const handleCardMoveAsAnswer = (hintHeight, timelineEventMarginTop) => {
     timelineEvents.value.forEach((element, index) => {
         if (index < overOutlineCount.value) {
             timelineEvents.value[index].transform = `translate(-50%, ${currentTimelinePosition.value[index]?.y - (hintHeight + timelineEventMarginTop)}px)`;
@@ -283,35 +242,15 @@ const calcTimelineEventsCurrentStyles = (hintHeight, timelineEventMarginTop) => 
     });
 };
 
-const resetTimelineEventsPosition = () => {
-    timelineEvents.value.forEach((element, index) => {
-        timelineEvents.value[index].transform = 'translate(-50%, 150px)';
-    });
-};
-
 const handleUpdateTimelinePosition = (currentStep) => {
-    // 更新 timelineEvents 的位置
-    const updateTimelineEventsPosition = (currentStep, timelinePositions) => {
-        for (let i = 0; i < currentStep; i++) {
-            timelineEvents.value[i].transform = `translate(-50%, ${timelinePositions[i]?.y}px)`;
-        }
-    };
-
     currentTimelinePosition.value = clueDefaultPosition[gameStatus.currentStep - 1];
-    switch (currentStep) {
-        case 1:
-            timelineEvents.value[0].transform = 'translate(-50%, 160px)';
-            break;
-        case 2:
-            hintPostionTop.value = '75px';
-            updateTimelineEventsPosition(currentStep, currentTimelinePosition.value);
-            break;
-        default:
-            if (currentStep >= 3) {
-                hintPostionTop.value = '75px';
-                updateTimelineEventsPosition(currentStep, currentTimelinePosition.value);
-            }
-            break;
+
+    if (currentStep > 1) {
+        hintPostionTop.value = '75px';
+    }
+    //updateTimelineEventsPosition
+    for (let i = 0; i < currentStep; i++) {
+        timelineEvents.value[i].transform = `translate(-50%, ${currentTimelinePosition.value[i]?.y}px)`;
     }
 };
 
@@ -362,6 +301,7 @@ const gameComment = (score) => {
 };
 
 const gameInit = () => {
+    clues.value = [...cluesData];
     timelineEvents.value = [];
     timelineEvents.value.push({
         year: `${selectedYear.value}`,
@@ -372,10 +312,6 @@ const gameInit = () => {
         step: 0,
     });
     handleUpdateTimelinePosition(gameStatus.currentStep);
-
-    clues.value = [...cluesData];
-
-    currentTimelinePosition.value = clueDefaultPosition[gameStatus.currentStep - 1];
 };
 
 const boardHeight = computed(() => {
@@ -405,16 +341,21 @@ const timelineHieght = computed(() => {
         <div class="w-full h-full flex justify-center items-center">
             <div v-if="isGameStart" class="w-full h-full relative">
                 <div class="mx-1 h-8 flex justify-center items-center relative">
-                    <div class="mr-2 text-sm font-Libre">{{ gameStatus.currentStep }} / {{ gameStatus.totalStep }} 題</div>
+                    <div class="mr-2 text-sm font-Libre">{{ gameStatus.currentStep < gameStatus.totalStep + 1 ? gameStatus.currentStep : gameStatus.totalStep }} / {{ gameStatus.totalStep }} 題</div>
                     <ul class="flex items-center">
                         <li
                             v-for="(isCorrect, index) in gameStatus.stepCorrect"
                             :key="index"
                             class="w-6 h-2.5 mr-[2px] border-2 rounded-full"
-                            :class="[
-                                isCorrect === null ? 'bg-[#e3e0d5] border-[#e3e0d5]' : isCorrect ? 'bg-[#5cb887] border-[#5cb887]' : 'bg-[#d25353] border-[#d25353]',
-                                gameStatus.currentStep === index + 1 ? 'border-[#5d72c9]' : '',
-                            ]"
+                            :class="
+                                gameStatus.currentStep === index + 1
+                                    ? 'border-[#5d72c9]'
+                                    : isCorrect === null
+                                    ? 'bg-[#e3e0d5] border-[#e3e0d5]'
+                                    : isCorrect
+                                    ? 'bg-[#5cb887] border-[#5cb887]'
+                                    : 'bg-[#d25353] border-[#d25353]'
+                            "
                         />
                     </ul>
                     <div data-test="score" class="ml-2 text-sm font-Libre">{{ gameStatus.score }} 分</div>
@@ -459,9 +400,7 @@ const timelineHieght = computed(() => {
                     <i-majesticons-lightbulb-shine class="absolute top-4 right-10 rotate-180 text-yellow-300 text-4xl" />
                     <div class="absolute right-0 bottom-0 text-white flex p-3 text-3xl items-center">
                         <i-solar-restart-square-bold class="mr-3" @click="handleGameReset" />
-                        <a target="_blank" href="https://social-plugins.line.me/lineit/share?url=https://wowdacom.github.io/TimelineQuest-ithelp-sample/">
-                            <i-ph-share-fill class="mr-3" @click="handleLineShare"
-                        /></a>
+                        <a target="_blank" href="https://social-plugins.line.me/lineit/share?url=https://wowdacom.github.io/TimelineQuest-ithelp-sample/"> <i-ph-share-fill class="mr-3" /></a>
                     </div>
                 </div>
 
@@ -507,7 +446,6 @@ const timelineHieght = computed(() => {
                             </div>
                             <img class="w-[65px] h-[65px] shrink-0 object-contain bg-white" :src="timelineEvent.image" alt="" />
                             <p class="px-2 text-sm text-[#5b5338] font-extrabold line-clamp-3">
-                                {{ timelineEvent.transform }}
                                 {{ timelineEvent.description }}
                             </p>
                         </div>
