@@ -369,6 +369,7 @@ const saveGameStatus = () => {
         localStorage.removeItem('gameStatus');
     }
 
+    window.removeEventListener('beforeunload', saveGameStatus);
     return null;
 };
 
