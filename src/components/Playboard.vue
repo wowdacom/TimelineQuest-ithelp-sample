@@ -5,11 +5,14 @@ import cluesData from '../assets/clues.json';
 import clueDefaultPosition from '../assets/clues_position.json';
 import axios from 'axios';
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbz9VCrRuZ0pbNB6StnMiRHUOpeZUTu-9c5mSLUGB605WliEp3KlDnmEreKLR7CWH95V/exec';
+const props = defineProps({
+    questions: Array,
+});
 
 const postAgeRecord = async (age, record_date) => {
+    const API_URL = `https://script.google.com/macros/s/AKfycbznV78ipmngwLiHotbSJG45mUQCGs10B5um0dXGKQOqooOl3gLjrcpsL_7fZoLGPd0a/exec?age=${age}&record_date=${record_date}`;
     try {
-        const response = await axios.post(API_URL, { age, record_date });
+        const response = await axios.get(API_URL);
         return response;
     } catch (error) {
         console.error(error);
@@ -289,7 +292,7 @@ const handleGameStart = (isRestart) => {
         isShowTip.value = true;
     }
     isGameStart.value = true;
-    clues.value = [...cluesData];
+    clues.value = props.questions ? [...props.questions] : [...cluesData];
     timelineEvents.value = [];
     timelineEvents.value.push({
         year: `${selectedYear.value}`,
