@@ -5,11 +5,11 @@ import cluesData from '../assets/clues.json';
 import clueDefaultPosition from '../assets/clues_position.json';
 import axios from 'axios';
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbyACPNAoPjWWjQAgCm2uA7CQ3pgklNbrvfpp1RFJEuUy_OJGSQsZUoXD7OrTTILoNQe/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbz9VCrRuZ0pbNB6StnMiRHUOpeZUTu-9c5mSLUGB605WliEp3KlDnmEreKLR7CWH95V/exec';
 
 const postAgeRecord = async (age, record_date) => {
     try {
-        const response = await axios.post(API_URL, { method: 'write', age, record_date });
+        const response = await axios.post(API_URL, { age, record_date });
         return response;
     } catch (error) {
         console.error(error);
