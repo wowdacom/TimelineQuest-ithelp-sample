@@ -288,7 +288,6 @@ const handleUpdateTimelineTargetPosition = () => {
 };
 
 const handleGameStart = (isRestart, event) => {
-    console.log(event);
     window.dataLayer.push({
         event: isRestart ? 'restart_game' : 'start_game',
         'gtm.elementTarget': event.target,
