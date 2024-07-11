@@ -287,7 +287,11 @@ const handleUpdateTimelineTargetPosition = () => {
     });
 };
 
-const handleGameStart = (isRestart) => {
+const handleGameStart = (isRestart, event) => {
+    window.dataLayer.push({
+        event: isRestart ? 'restart_game' : 'start_game',
+        'gtm.elementTarget': event.target,
+    });
     if (!isRestart) {
         isShowTip.value = true;
     }
@@ -306,7 +310,11 @@ const handleGameStart = (isRestart) => {
     postAgeRecord(selectedYear.value, new Date().toLocaleDateString());
 };
 
-const handleGameKeep = () => {
+const handleGameKeep = (parameter, event) => {
+    window.dataLayer.push({
+        event: 'continue_game',
+        'gtm.elementTarget': event.target,
+    });
     const savedGameStatus = loadGameStatus();
     isGameStart.value = true;
     isShowTip.value = false;
