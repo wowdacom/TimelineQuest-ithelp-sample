@@ -288,6 +288,7 @@ const handleUpdateTimelineTargetPosition = () => {
 };
 
 const handleGameStart = (isRestart, event) => {
+    console.log(event);
     window.dataLayer.push({
         event: isRestart ? 'restart_game' : 'start_game',
         'gtm.elementTarget': event.target,
@@ -540,7 +541,11 @@ gameInit();
                         <span class="">{{ selectedYear }} </span>那年出生的你，選擇要…
                     </div>
                     <div class="flex">
-                        <button data-test="game-start-btn" class="rounded-full border w-[130px] h-[40px] bg-[#5d72c9] text-white flex justify-center items-center" @click="handleGameStart(true)">
+                        <button
+                            data-test="game-start-btn"
+                            class="rounded-full border w-[130px] h-[40px] bg-[#5d72c9] text-white flex justify-center items-center"
+                            @click="handleGameStart(true, $event)"
+                        >
                             重新開始 <i-solar-restart-square-bold class="ml-1 inline-block" />
                         </button>
                         <button data-test="game-start-btn" class="rounded-full border w-[130px] h-[40px] bg-[#5d72c9] text-white flex justify-center items-center" @click="handleGameKeep">
@@ -557,7 +562,7 @@ gameInit();
                             </option>
                         </select>
                     </div>
-                    <button data-test="game-start-btn" class="rounded-full border w-[150px] h-[40px] bg-[#5d72c9] text-white" @click="handleGameStart(false)">
+                    <button data-test="game-start-btn" class="rounded-full border w-[150px] h-[40px] bg-[#5d72c9] text-white" @click="handleGameStart(false, $event)">
                         開始遊戲 <i-maki-arrow class="inline-block" />
                     </button>
                 </div>
